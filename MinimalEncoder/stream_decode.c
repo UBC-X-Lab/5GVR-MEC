@@ -1,6 +1,7 @@
 
 
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -15,6 +16,7 @@
 #include <libswscale/swscale.h>
 
 #include "stream_decode.h"
+#include "buildtimestamp.h"
 #include "lockedQueue/locked_queue.h"
 
 l_queue* decode_pkt_q = NULL;
@@ -29,8 +31,7 @@ static int g_avSteamIndex;
 
 struct timeval tv; 
 
-static int open_codec_context(int *stream_idx,
-                              AVCodecContext **dec_ctx, AVFormatContext *fmt_ctx, enum AVMediaType type) {
+static int open_codec_context(int *stream_idx, AVCodecContext **dec_ctx, AVFormatContext *fmt_ctx, enum AVMediaType type) {
     int ret, stream_index;
     AVStream *st;
     AVCodec *dec = NULL;
@@ -92,15 +93,21 @@ int decode(AVCodecContext *ctx, AVPacket *pkt, AVFrame *frame) {
     fprintf(stdout, "Sending packet to be decoded\n");
     /* call to decoder to decode pkt */
     // printf("DECODE: send pkt with data: stream index %d, size %d, flags %d to ffmpeg for decode\n", pkt->stream_index, pkt->size, pkt->flags);
+    gettimeofday(&tv, NULL);
+    fprintf(stderr, "stream_decode,calling,avcodec_send_packet,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
     ret = avcodec_send_packet(ctx, pkt);
     if (ret < 0) {
         fprintf(stderr, "Error: could not send packet to decoder for decoding\n");
         av_packet_free(&pkt);
         return -1;
     }
+    gettimeofday(&tv, NULL);
+    fprintf(stderr, "stream_decode,returning,avcodec_send_packet,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
     // printf("DECODE: Successfully returned from packet delivery\n");
     /* call to decoder to receive output */
     // printf("DECODE: receiving frame from ffmpeg decoder\n");
+    gettimeofday(&tv, NULL);
+    fprintf(stderr, "stream_decode,calling,avcodec_receive_frame,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
     ret = avcodec_receive_frame(ctx, frame);
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) { 
         //frames not ready or flushed
@@ -110,6 +117,8 @@ int decode(AVCodecContext *ctx, AVPacket *pkt, AVFrame *frame) {
         av_packet_free(&pkt);
         return -1;
     }
+    gettimeofday(&tv, NULL);
+    fprintf(stderr, "stream_decode,returning,avcodec_receive_frame,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), frame->pkt_size, frame->pts);
     // fprintf(stdout, "Decoded frame Received\n");
     // printf("DECODE: frame has data: flags %d, key_frame %d, sample_rate %d, pkt_size %d\n", frame->flags, frame->key_frame, frame->sample_rate, frame->pkt_size);
     // deallocate pkt since it is nolonger used
@@ -165,26 +174,38 @@ void run_decoder() {
         }
         /* grab pkt off of decode_pkt_q from receive thread*/
         //printf("DECODE: pulling packet from queue linked to receive thread\n");
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "stream_decode,calling,q_dequeue,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
         if (q_dequeue(decode_pkt_q, (void**) &pkt) < 0) {
             fprintf(stderr, "DECODE: stream Ended Decoder shutting down\n");
             q_kill(decode_frame_q); // signal kill on frame queue so encoder thread knows to terminate
             avcodec_free_context(&decode_ctx);
             return; 
         }
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "stream_decode,returning,q_dequeue,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
         //printf("DECODE: packet has data: stream index %d, size %d, flags %d\n", pkt->stream_index, pkt->size, pkt->flags);
         //printf("DECODE: Allocating frame to store decoded information in\n");
         frame = av_frame_alloc();
         //printf("DECODE: calling into decode\n");
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "stream_decode,calling,decode,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
         ret = decode(decode_ctx, pkt, frame);
         if (ret < 0) {
             continue;
         }
+        fprintf(stderr, "stream_decode,returning,decode,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), frame->pkt_size, frame->pts);
+
         //printf("DECODE: successfully returned from decoding\n");
         //printf("DECODE: frame has data: flags %d, key_frame %d, sample_rate %d, pkt_size %d\n", frame->flags, frame->key_frame, frame->sample_rate, frame->pkt_size);
 
         /* throws decoded decode_frame_q to go to encode thread */
         //printf("DECODE: placing frame on frame queue to encoder\n");
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "stream_decode,calling,q_enqueue,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), frame->pkt_size, frame->pts);
         q_enqueue(decode_frame_q, frame);
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "stream_decode,returning,q_enqueue,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
         frame = NULL;
     }
     printf("DECODE: freeing the av codec context associated with decode thread\n");

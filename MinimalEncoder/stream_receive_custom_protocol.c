@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -24,6 +25,7 @@
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 
+#include "buildtimestamp.h"
 #include "stream_receive.h"
 #include "lockedQueue/locked_queue.h"
 
@@ -102,6 +104,7 @@ void run_receiver() {
     AVPacket* pkt;
     int iResult;
     fprintf(stdout, "running receive thread\n");
+    int k = 0;
     while(1) {
         if (q_is_dead(pkt_q)) {
             fprintf(stdout, "Receive thread received kill signal\n");
@@ -111,7 +114,11 @@ void run_receiver() {
         while(1) {
             fprintf(stdout, "RECEIVER: Receiving frame from stream\n");
             uint8_t recvlen[4];
+            gettimeofday(&tv, NULL);
+            fprintf(stderr, "stream_receive_custom_protocol,calling,recv,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
             iResult = recv(tsock, (char*)recvlen, 4, MSG_WAITALL);
+            gettimeofday(&tv, NULL);
+            fprintf(stderr, "stream_receive_custom_protocol,returning,recv,%f,size:%d,pts:n/a\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), iResult);
             printf("RECEIVER: Recieved length: iResult = %d\n", iResult);
 			uint32_t len = -1;
             printf("byte1 = %x, byte2 = %x, byte3 = %x, byte4 = %x\n", recvlen[0], recvlen[1], recvlen[2], recvlen[3]);
@@ -128,18 +135,32 @@ void run_receiver() {
 
             if (len != -1) {
                 char* receivedata = (char*)malloc(len);
+                gettimeofday(&tv, NULL);
+                fprintf(stderr, "stream_receive_custom_protocol,calling,recv,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
                 iResult = recv(tsock, receivedata, len, MSG_WAITALL);
+                gettimeofday(&tv, NULL);
+                fprintf(stderr, "stream_receive_custom_protocol,returing,recv,%f,size:%d,pts:n/a\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), iResult);
                 printf("RECEIVER: Recieved data: %d\n", iResult);
                 printf("RECEIVER: Received packet of len %d, read %d bytes\n", len, iResult);
 				if (iResult > 0) {
 					printf("Receiver got packet of len %d\n", len);
+                    gettimeofday(&tv, NULL);
+                    fprintf(stderr, "stream_receive_custom_protocol,returning,av_new_packet,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
 					int ret = av_new_packet(pkt, len);
+                    gettimeofday(&tv, NULL);
+                    fprintf(stderr, "stream_receive_custom_protocol,returning,av_new_packet,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
 					if (ret) {
 						fprintf(stderr, "RECEIVER: Error allocating packet\n");
 						return;
 					}
+                    k++;
+                    pkt->pts = k;
+                    gettimeofday(&tv, NULL);
+                    fprintf(stderr, "stream_receive_custom_protocol,calling,memcpy,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
 					memcpy(pkt->data, receivedata, len);
-					free(receivedata);
+                    gettimeofday(&tv, NULL);
+                    fprintf(stderr, "stream_receive_custom_protocol,returning,memcpy,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
+                    free(receivedata);
                     break;
 				}
 				else if (iResult == 0) {
@@ -154,7 +175,11 @@ void run_receiver() {
         }
         printf("RECEIVER: frame has data stream index: %d, size %d, flags %d\n", pkt->stream_index, pkt->size, pkt->flags);
         fprintf(stdout, "RECEIVER: New frame queued for decoding\n");
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "stream_receive_custom_protocol,calling,q_enqueue,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
         q_enqueue(pkt_q, pkt);
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "stream_receive_custom_protocol,returning,q_enqueue,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
         pkt = NULL;
     }
     // fprintf(stdout, "Receiver: Freeing packet used for receival\n");

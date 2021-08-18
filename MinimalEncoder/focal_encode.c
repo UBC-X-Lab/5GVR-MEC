@@ -1,5 +1,6 @@
 
 
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,6 +16,7 @@
 #include <libswscale/swscale.h>
 
 #include "focal_encode.h"
+#include "buildtimestamp.h"
 #include "focal_transmit.h"
 #include "lockedQueue/locked_queue.h"
 
@@ -38,12 +40,16 @@ struct timeval tv;
 
 void encode(AVCodecContext *ctx, AVPacket *pkt, AVFrame *frame) {
     int ret;
+    gettimeofday(&tv, NULL);
+    fprintf(stderr, "focal_encode,calling,avcodec_send_frame,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), frame->pkt_size, frame->pts);
     ret = avcodec_send_frame(ctx, frame);
     if (ret < 0)
     {
         fprintf(stderr, "Error sending a frame for encoding\n");
         exit(1);
     }
+    gettimeofday(&tv, NULL);
+    fprintf(stderr, "focal_encode,returning,avcodec_send_frame,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
     av_frame_free(&frame); // this is ok, as in all cases the pointer handed in is set to NULL after, destroyed when scope is removed, or not touched again. no dangling pointer.
     while (1)
     {
@@ -51,6 +57,8 @@ void encode(AVCodecContext *ctx, AVPacket *pkt, AVFrame *frame) {
         {
             sched_yield();
         }
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "focal_encode,calling,avcodec_receive_packet,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
         ret = avcodec_receive_packet(ctx, pkt);
         if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
             return;
@@ -59,16 +67,30 @@ void encode(AVCodecContext *ctx, AVPacket *pkt, AVFrame *frame) {
             fprintf(stderr, "Error during encoding\n");
             exit(1);
         }
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "focal_encode,returning,avcodec_receive_packet,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "focal_encode,calling,send_packet,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
         send_packet(pkt);
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "focal_encode,returning,send_packet,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
     }
 }
 
 static void send_packet(const AVPacket *pkt) {
     pthread_mutex_lock(&ti->mutex);
+    gettimeofday(&tv, NULL);
+    fprintf(stderr, "focal_encode,n/a,transmit_interface_add,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
     ti->pkt = pkt;
     ti->newPacket = 1;
     pthread_mutex_unlock(&ti->mutex);
+
+    gettimeofday(&tv, NULL);
+    fprintf(stderr, "focal_encode,calling,sched_yield,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
+
     sched_yield();
+    gettimeofday(&tv, NULL);
+    fprintf(stderr, "focal_encode,returning,sched_yield,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
 }
 
 void* handle_input_to_startup_encoder(void* arg_struct) {
@@ -170,13 +192,21 @@ void run_encoder(AVFrame* init_frame) {
             break;
         }
         /* grab frame off frame_q from decode tread */
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "focal_encode,calling,q_dequeue,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
         if (q_dequeue(frame_q, (void**) &frame) < 0) {
             fprintf(stderr, "Stream Ended Encoder shutting down\n");
             avcodec_free_context(&ctx);
             return; 
         }
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "focal_encode,returning,q_dequeue,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), frame->pkt_size, frame->pts);
         pkt = av_packet_alloc();
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "focal_encode,calling,encode,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), frame->pkt_size, frame->pts);
         encode(ctx, pkt, frame); // calls send_packet no need to here
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "focal_encode,returning,encode,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
         pkt = NULL;
     }
     avcodec_free_context(&ctx);

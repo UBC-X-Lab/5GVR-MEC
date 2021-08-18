@@ -1,6 +1,7 @@
 
 
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -14,6 +15,7 @@
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 
+#include "buildtimestamp.h"
 #include "stream_receive.h"
 #include "lockedQueue/locked_queue.h"
 
@@ -64,7 +66,11 @@ void run_receiver() {
         pkt = av_packet_alloc();
         while(1) {
             fprintf(stdout, "Receiving frame from stream\n");
+            gettimeofday(&tv, NULL);
+            fprintf(stderr, "stream_receive,calling,av_read_frame,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
             int ret = av_read_frame(format_context, pkt);
+            gettimeofday(&tv, NULL);
+            fprintf(stderr, "stream_receive,returning,av_read_frame,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
             if (ret < 0) {
                 fprintf(stdout, "Stream has ended\n");
                 q_kill(pkt_q);
@@ -78,7 +84,11 @@ void run_receiver() {
         }
         printf("frame has data stream index: %d, size %d, flags %d\n", pkt->stream_index, pkt->size, pkt->flags);
         fprintf(stdout, "New frame queued for decoding\n");
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "stream_receive,calling,q_enqueue,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
         q_enqueue(pkt_q, pkt);
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "stream_receive,returning,q_enqueue,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
         pkt = NULL;
     }
     // fprintf(stdout, "Receiver: Freeing packet used for receival\n");
