@@ -22,7 +22,7 @@
 #include "lockedQueue/locked_queue.h"
 
 /* Parameters */
-//static char* SRC_STREAM = "rist://@0.0.0.0:4000";
+// static char* SRC_STREAM = "udp://@0.0.0.0:4000";
 static char* SRC_STREAM = "../test_files/360sample1080s.mp4";
 struct timeval tv;
 

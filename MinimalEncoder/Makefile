@@ -5,16 +5,19 @@ CFLAGS := -I$(HOME)/ffmpeg_build/include -I$(HOME)/librist_build/include
 $(info options for make are: FocalEncoder (parallel - up to date), FocalEncoderDynamic (uses rist input), FocalEncoderStatic (uses static input video), FocalEncoderDummyTCP (customtcp), clean)
 
 FocalEncoderStatic: encoder.c focal_transmit.c
-	$(CC) encoder.c focal_transmit.c $(CFLAGS) $(LDFLAGS) -o FocalEncoder
+	$(CC) -g encoder.c focal_transmit.c $(CFLAGS) $(LDFLAGS) -o FocalEncoder
 
 FocalEncoderDynamic: dynamic_encoder.c focal_transmit.c
-	$(CC) dynamic_encoder.c focal_transmit.c $(CFLAGS) $(LDFLAGS) -o FocalEncoder
+	$(CC) -g dynamic_encoder.c focal_transmit.c $(CFLAGS) $(LDFLAGS) -o FocalEncoder
 
-FocalEncoder: server_controller.c stream_receive.o stream_decode.o focal_encode.c focal_transmit.c lockedQueue/locked_queue.o
-	$(CC) server_controller.c stream_receive.o stream_decode.o focal_encode.c focal_transmit.c lockedQueue/locked_queue.o $(CFLAGS) $(LDFLAGS) -o FocalEncoder
+FocalEncoder: server_controller.c stream_receive.o stream_decode.o focal_encode.c focal_transmit.c lockedQueue/locked_queue.o buildtimestamp.o
+	$(CC) -g server_controller.c stream_receive.o stream_decode.o focal_encode.c focal_transmit.c lockedQueue/locked_queue.o buildtimestamp.o $(CFLAGS) $(LDFLAGS) -o FocalEncoder
 
-FocalEncoderDummyTCP: server_controller.c stream_receive_custom_protocol.o stream_decode.o focal_encode.o focal_transmit.o lockedQueue/locked_queue.o
-	$(CC) server_controller.c stream_receive_custom_protocol.o stream_decode.o focal_encode.c focal_transmit.c lockedQueue/locked_queue.o $(CFLAGS) $(LDFLAGS) -o FocalEncoder
+FocalEncoderDummyTCP: server_controller.c stream_receive_custom_protocol.o stream_decode.o focal_encode.o focal_transmit.o lockedQueue/locked_queue.o buildtimestamp.o
+	$(CC) -g server_controller.c stream_receive_custom_protocol.o stream_decode.o focal_encode.c focal_transmit.c lockedQueue/locked_queue.o buildtimestamp.o $(CFLAGS) $(LDFLAGS) -o FocalEncoder
+
+FocalEncoderDummyTcpALLQ: server_controller_allq.c stream_receive_custom_protocol.o stream_decode.o focal_encode_allq.o focal_transmit_allq.o lockedQueue/locked_queue.o buildtimestamp.o
+	$(CC) -g server_controller_allq.c stream_receive_custom_protocol.c stream_decode.o focal_encode_allq.o focal_transmit_allq.o lockedQueue/locked_queue.o buildtimestamp.o $(CFLAGS) $(LDFLAGS) -o FocalEncoder
 
 clean:
 	rm FocalEncoderStatic FocalEncoderDynamic FocalEncoder
