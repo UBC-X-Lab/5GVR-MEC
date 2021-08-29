@@ -30,8 +30,8 @@
 #include "lockedQueue/locked_queue.h"
 
 #define MAX 80
-#define PORT 4096
-#define ADDRESS "192.168.1.60"
+#define PORT "4096"
+// #define ADDRESS "192.168.1.60"
 #define SA struct sockaddr
 
 l_queue* pkt_q = NULL;
@@ -55,48 +55,97 @@ void setup_receiver(l_queue* queue_pkt_q, AVFormatContext* ctx) {
     pkt_q = queue_pkt_q;
     format_context = ctx;
 	printf("Receiver Starting...\n");
-    int listenfd, connfd;
-    struct sockaddr_in servaddr, cli;
-	int iResult;
+    int yes = 1;// for setsockopt() SO_REUSEADDR, below
+	int ret;
+	
+	int sockfd, connfd, len;
 
-	// Initialize socket
-	iResult = (listenfd = socket(AF_INET, SOCK_STREAM, 0));
-	if (iResult < 0) {
-		fprintf(stderr, "RECEIVER: Socket creation failed with error: %d\n", iResult);
-		return;
+	struct sockaddr_in servaddr, cli;
+	struct sockaddr_storage their_addr;
+	struct addrinfo hints, *serverinfo, *p;
+	socklen_t sin_size;
+
+	char s[INET6_ADDRSTRLEN]; // to store connection addr
+
+	//setup hints and getaddr info for establishing good connection
+	memset(&hints, 0, sizeof(hints));
+
+	hints.ai_family = AF_INET; // IPV4
+	hints.ai_socktype = SOCK_STREAM; // this enables a TCP connection 
+	hints.ai_flags = AI_PASSIVE;
+	if ((ret = getaddrinfo(NULL, PORT, &hints, &serverinfo)) != 0) {
+		fprintf(stdout, "getaddrinfo: %s\n", gai_strerror(ret));
+		return 1;
 	}
 
-	bzero(&servaddr, sizeof(servaddr));
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(PORT);
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    
-    iResult = bind(listenfd, (SA *) &servaddr, sizeof(servaddr));
-    if (iResult < 0) {
-        fprintf(stderr, "RECEIVER: Socket bind error.\n"); 
-        return;
-    }
+	// walk serverinfo linked list and bind to first valid address
+	for (p = serverinfo; p != NULL; p = p->ai_next) {
+		//create socket
+		if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+			perror("stream_receive_custom_protocol: socket");
+			continue; 
+		}
+		printf("Socket successfully created..\n");
+		// to avoid address already in use error messages and allow binding
+		if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+			perror("setsockopt");
+			exit(1);
+		}
 
-    iResult = listen(listenfd, 5);
-    if (iResult < 0) {
-        fprintf(stderr, "RECEIVER: Error listening on socket\n");
-        return;
-    }
+		// attempt to bind to socket
+		if ((ret = bind(sockfd, p->ai_addr, p->ai_addrlen)) == -1) {
+			close(sockfd);
+			perror("stream_receive_custom_protocol: bind");
+			continue;
+		}
 
-    printf("RECEIVER: waiting for a connection on port %d\n", PORT);
-    fflush(stdout);
-    int len = sizeof(cli);
-    iResult = (connfd = accept(listenfd, (SA*) &cli, &len));
-    if (iResult < 0) {
-        fprintf(stderr, "RECEIVER: Server unable to establish connection\n");
-        return;
-    }
-    tsock = connfd;
-    run_receiver();
+		printf("Socket successfully binded..\n");
+		//found a good one
+		break; 
+	}
+	// don't need this anymore
+	freeaddrinfo(serverinfo);
 
-    //cleanup 
-    close(connfd);
-    close(listenfd);
+	// check to make sure socket actually binded and that the loop did not just run out of entries
+	if (p == NULL) {
+		fprintf(stderr, "stream_receive_custom_protocol: failed to bind\n");
+		exit(1);
+	}
+
+    // Now server is ready to listen and verification 
+    if ((listen(sockfd, 5)) != 0) { 
+        printf("Listen failed...\n"); 
+        exit(1); 
+    } 
+	printf("Server listening...\n");
+	void* get_in_addr(struct sockaddr *sa);
+
+	while(1) {
+		sin_size = sizeof their_addr;
+		printf("Waiting for connection...\n");
+		// accept connection
+    	connfd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size); 
+    	if (connfd < 0) { 
+        	printf("server accept failed...%s\n", gai_strerror(errno));
+        	continue; 
+    	}
+		printf("server accepted client\n");
+		inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&cli), s, sizeof s);
+		printf("stream_receive_custom_protocoltransmit_server: accepted connection from %s\n", s);
+		break;
+
+	}
+	
+	tsock = connfd;
+	// signal ready
+	q_ready(pkt_q);
+
+	//run receiver loop
+	run_receiver();
+	
+	//cleanup
+	printf("Closing connection");
+	close(tsock);
     q_kill(pkt_q);
 }
 

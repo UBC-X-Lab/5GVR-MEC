@@ -1,6 +1,7 @@
 
 #include "../buildtimestamp.h"
-#include "../focal_transmit.h"
+#include "../focal_transmit_allq.h"
+#include "../lockedQueue/locked_queue.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,71 +25,70 @@
 #define INVALID_SOCKET          (~0)//(SOCKET)(~0)
 #define SOCKET_ERROR            (-1)
 
-static transmit_interface_t *ti;
+l_queue* send_pkt_q = NULL;
 static int tsock;
 
 struct timeval tv;
 
 void transmit() {
-    int iResult;
-	ti->ready = 1; // set to not ready because it has recieved a frame
-	while (!ti->kill) // while new frames are still comming (ie encoder is live) 
-	{
-		pthread_mutex_lock(&ti->mutex);
-		if (ti->newPacket)
-		{
-			uint32_t size = ti->pkt->size;
-			gettimeofday(&tv, NULL);
-			fprintf(stderr, "dummy_sender,n/a,transmit_interface_recieve,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), ti->pkt->size, ti->pkt->pts);
+    AVPacket* pkt;
+	int ret;
+	while(1) {
+        if (q_is_dead(send_pkt_q)) {
+            printf("Transmit: Received signal to terminate, transmit shutting down\n");
+            break;
+        }
+        /* grab pkt off of send_pkt_q from encode thread*/
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "dummy_sender,calling,q_dequeue,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
+        if (q_dequeue(send_pkt_q , (void**) &pkt) < 0) {
+            fprintf(stderr, "transmit: stream ended. Transmitter shutting down\n");
+            q_kill(send_pkt_q); // signal kill on pkt queue so encoder thread knows to terminate
+            return; 
+        }
+        gettimeofday(&tv, NULL);
+        fprintf(stderr, "dummy_sender,returning,q_dequeue,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
+		
+		if (pkt != NULL) {
+			uint32_t size = pkt->size;
 			const uint8_t *data = (uint8_t *)malloc(size * sizeof(uint8_t)); //allocate space for new frame
 			gettimeofday(&tv, NULL);
-			fprintf(stderr, "dummy_sender,calling,memcpy,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), ti->pkt->size, ti->pkt->pts);
-			memcpy(data, ti->pkt->data, size); // copy frame for transmission
+			fprintf(stderr, "dummy_sender,calling,memcpy,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
+			memcpy(data, pkt->data, size); // copy frame for transmission
 			gettimeofday(&tv, NULL);
 			fprintf(stderr, "dummy_sender,returning,memcpy,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
-			ti->newPacket = 0;
-			pthread_mutex_unlock(&ti->mutex); // unlock mutex as soon as possible
+			
+
             printf("Sending packet size\n");
             printf("size = %d\n", size);
             int sendval = htonl(size);
             printf("byte1 = %x, byte2 = %x, byte3 = %x, byte4 = %x\n", (sendval & 0xff000000) >> 24, (sendval & 0x00ff0000) >> 16, (sendval & 0x0000ff00) >> 8, (sendval & 0x000000ff));
 			gettimeofday(&tv, NULL);
 			fprintf(stderr, "dummy_sender,calling,send,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
-			iResult = send(tsock, &sendval, 4, NULL);
-            if (iResult < 0) {
+			ret = send(tsock, &sendval, 4, NULL);
+            if (ret < 0) {
                 printf("Unable to send packet info\n");
             }
 			gettimeofday(&tv, NULL);
-			fprintf(stderr, "dummy_sender,returning,send,%f,size:%d,pts:n/a\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), iResult);
+			fprintf(stderr, "dummy_sender,returning,send,%f,size:%d,pts:n/a\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), ret);
             printf("SENDING PACKET\n");
 			gettimeofday(&tv, NULL);
 			fprintf(stderr, "dummy_sender,calling,send,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
-			iResult = send(tsock, data, size, NULL);
-            if (iResult < 0) {
+			ret = send(tsock, data, size, NULL);
+            if (ret < 0) {
                 printf("Unable to send packet\n");
             }
 			gettimeofday(&tv, NULL);
-			fprintf(stderr, "dummy_sender,returning,send,%f,size:%d,pts:n/a\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), iResult);
+			fprintf(stderr, "dummy_sender,returning,send,%f,size:%d,pts:n/a\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), ret);
 			free(data);
+			av_packet_free(&pkt); // this sets pointer to NULL after free
 		}
-		else
-		{
-			pthread_mutex_unlock(&ti->mutex);
-		}
-		gettimeofday(&tv, NULL);
-		fprintf(stderr, "dummy_sender,calling,sched_yield,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
-		sched_yield();
-		gettimeofday(&tv, NULL);
-		fprintf(stderr, "dummy_sender,returning,sched_yield,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
 	}
-	printf("Closing connection");
-	// close the socket
-	close(tsock);
 }
 
-void *transmit_connect(void *transmit_interface)
+void *transmit_connect(void *pkt_queue)
 {
-	ti = (transmit_interface_t *)transmit_interface;
+	send_pkt_q = (l_queue*) pkt_queue;
 	int sockfd, len, iResult;
 	struct sockaddr_in servaddr;
     struct addrinfo* result = NULL;
@@ -141,5 +141,10 @@ void *transmit_connect(void *transmit_interface)
     printf("Connection established with server\n");
 	// function for chat
 	tsock = sockfd;
+	q_ready(send_pkt_q);
 	transmit();
+	
+	printf("Closing connection");
+	// close the socket
+	close(tsock);
 }

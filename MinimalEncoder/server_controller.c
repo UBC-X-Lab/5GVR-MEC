@@ -15,17 +15,18 @@
 #include <libswscale/swscale.h>
 
 #include "server_controller.h"
-#include "focal_transmit.h"
+#include "focal_transmit_allq.h"
 #include "stream_decode.h"
 #include "stream_receive.h"
-#include "focal_encode.h"
+#include "focal_encode_allq.h"
 #include "lockedQueue/locked_queue.h"
 
 /* Parameters */
 // static char* SRC_STREAM = "udp://@0.0.0.0:4000";
-static char* SRC_STREAM = "../test_files/360sample1080s.mp4";
+static char* SRC_STREAM = "../test_files/spiderman1080.mp4";
 struct timeval tv;
 
+pthread_attr_t attr;
 static pthread_t transmit_thread;
 static pthread_t encode_thread;
 static pthread_t decode_thread;
@@ -35,6 +36,7 @@ static transmit_interface_t ti = {};
 
 static l_queue* receive_decode_pkt_q;
 static l_queue* decode_encode_frame_q;
+static l_queue* encode_transmit_pkt_q;
 
 /* ffmpeg state required variables for thread initialization */
 static AVFormatContext *g_avFormatContext = NULL;
@@ -55,6 +57,7 @@ int main(int argc, char **argv)
 {
     int bitrate;
     int ret;
+    size_t stacksize;
 
     /* set variables from arguments passed to main */
     if((argc != 3) && (argc != 2)){
@@ -70,30 +73,20 @@ int main(int argc, char **argv)
     /* allocate and initialize queues for thread pipeline */
     receive_decode_pkt_q = q_queue_alloc();
     decode_encode_frame_q = q_queue_alloc();
+    encode_transmit_pkt_q = q_queue_alloc();
 
-    /* Initialize data transmit thread */
-    if (pthread_mutex_init(&ti.mutex, NULL)) // intializes mutex
-    {
-        fprintf(stderr, "Error: focal_transmit failed creating mutex\n");
-        exit(1);
-    }
-    // **All of these values are shared with focalEncoder**
-    ti.ready = 0; // indicates wether or not the encoder is ready for a new frame
-    ti.kill = 0; // indicates the end of frames being pushed
-    ti.newPacket = 0; // indicates if there is a new packet to recieve
-
-    if (pthread_create(&transmit_thread, NULL, transmit_connect, &ti))
+    if (pthread_create(&transmit_thread, NULL, transmit_connect, encode_transmit_pkt_q))
     {
         fprintf(stderr, "Error: failed to create transmit thread");
         avformat_close_input(&g_avFormatContext);
         q_free_queue(receive_decode_pkt_q, NULL);
         q_free_queue(decode_encode_frame_q, NULL);
-        pthread_mutex_destroy(&ti.mutex);
+        q_free_queue(encode_transmit_pkt_q, NULL);
         abort();
     }
-
+    
     /* spin until transmit thread creates connection with unity end of the project */ 
-    while (!ti.ready) {
+    while(!encode_transmit_pkt_q->ready) {
         sched_yield();
     }
 
@@ -123,7 +116,7 @@ int main(int argc, char **argv)
         avformat_close_input(&g_avFormatContext);
         q_free_queue(receive_decode_pkt_q, NULL);
         q_free_queue(decode_encode_frame_q, NULL);
-        pthread_mutex_destroy(&ti.mutex);
+        q_free_queue(encode_transmit_pkt_q, NULL);
         abort();
     }
 
@@ -141,16 +134,16 @@ int main(int argc, char **argv)
     if (pthread_create(&receive_thread, NULL, handle_input_to_startup_receiver, r_in)) {
         fprintf(stderr, "Error: failed to create receive thread\n");
         avformat_close_input(&g_avFormatContext);
-        q_free_queue(receive_decode_pkt_q, NULL); 
+        q_free_queue(receive_decode_pkt_q, NULL);
         q_free_queue(decode_encode_frame_q, NULL);
-        pthread_mutex_destroy(&ti.mutex);
+        q_free_queue(encode_transmit_pkt_q, NULL);
         abort();
     }
 
     /* initialize encode thread */
     e_input* e_in = malloc(sizeof(e_in));
     e_in->frame_q = decode_encode_frame_q;
-    e_in->ti = &ti;
+    e_in->pkt_q = encode_transmit_pkt_q;
     e_in->bitrate = bitrate;
 
     if (pthread_create(&encode_thread, NULL, handle_input_to_startup_encoder, e_in)) {
@@ -158,7 +151,7 @@ int main(int argc, char **argv)
         avformat_close_input(&g_avFormatContext);
         q_free_queue(receive_decode_pkt_q, NULL);
         q_free_queue(decode_encode_frame_q, NULL);
-        pthread_mutex_destroy(&ti.mutex);
+        q_free_queue(encode_transmit_pkt_q, NULL);
         abort();
     }
 
@@ -167,6 +160,7 @@ int main(int argc, char **argv)
     fprintf(stdout, "Connection with client ended, shutting down\n");
     q_kill(decode_encode_frame_q);
     q_kill(receive_decode_pkt_q);
+    q_kill(encode_transmit_pkt_q);
     pthread_join(encode_thread, NULL);
     pthread_join(decode_thread, NULL);
     pthread_join(receive_thread, NULL);
@@ -175,7 +169,6 @@ int main(int argc, char **argv)
     fprintf(stdout, "freeing pipeline\n");
     q_free_queue(decode_encode_frame_q, frame_finalizer);
     q_free_queue(receive_decode_pkt_q, packet_finalizer);
-    /* free transmit_interface memory */
-    pthread_mutex_destroy(&ti.mutex);
+    q_free_queue(encode_transmit_pkt_q, packet_finalizer);
     return 0;
 }

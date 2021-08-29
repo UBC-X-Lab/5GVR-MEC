@@ -15,13 +15,14 @@
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 
-#include "focal_encode.h"
+#include "focal_encode_allq.h"
 #include "buildtimestamp.h"
-#include "focal_transmit.h"
+#include "focal_transmit_allq.h"
 #include "lockedQueue/locked_queue.h"
 
 l_queue* frame_q = NULL;
-transmit_interface_t* ti = NULL;
+l_queue* transmit_pkt_q = NULL;
+// transmit_interface_t* ti = NULL;
 
 AVPacket* g_avPacket = NULL;
 AVFrame* g_avFrame = NULL;
@@ -50,62 +51,52 @@ void encode(AVCodecContext *ctx, AVPacket *pkt, AVFrame *frame) {
     }
     gettimeofday(&tv, NULL);
     fprintf(stderr, "focal_encode,returning,avcodec_send_frame,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
-    av_frame_free(&frame); // this is ok, as in all cases the pointer handed in is set to NULL after, destroyed when scope is removed, or not touched again. no dangling pointer.
-    while (1)
-    {
-        while (ti->newPacket)
-        {
-            sched_yield();
-        }
-        gettimeofday(&tv, NULL);
-        fprintf(stderr, "focal_encode,calling,avcodec_receive_packet,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
-        ret = avcodec_receive_packet(ctx, pkt);
-        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-            return;
-        else if (ret < 0)
-        {
-            fprintf(stderr, "Error during encoding\n");
-            exit(1);
-        }
-        gettimeofday(&tv, NULL);
-        fprintf(stderr, "focal_encode,returning,avcodec_receive_packet,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
-        gettimeofday(&tv, NULL);
-        fprintf(stderr, "focal_encode,calling,send_packet,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
-        send_packet(pkt);
-        gettimeofday(&tv, NULL);
-        fprintf(stderr, "focal_encode,returning,send_packet,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
+    //av_frame_free(&frame); // this is ok, as in all cases the pointer handed in is set to NULL after, destroyed when scope is removed, or not touched again. no dangling pointer.
+    gettimeofday(&tv, NULL);
+    fprintf(stderr, "focal_encode,calling,avcodec_receive_packet,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
+    ret = avcodec_receive_packet(ctx, pkt);
+    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+        return;
     }
+    else if (ret < 0)
+    {
+        fprintf(stderr, "Error during encoding\n");
+        av_frame_free(&frame);
+        exit(1);
+    }
+    gettimeofday(&tv, NULL);
+    fprintf(stderr, "focal_encode,returning,avcodec_receive_packet,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
+    gettimeofday(&tv, NULL);
+    fprintf(stderr, "focal_encode,calling,q_enqueue,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
+    q_enqueue(transmit_pkt_q, pkt);
+    gettimeofday(&tv, NULL);
+    fprintf(stderr, "focal_encode,returning,q_enqueue,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
+
+    av_frame_free(&frame); // this sets pointer to NULL after
 }
 
-static void send_packet(const AVPacket *pkt) {
+/* static void send_packet(const AVPacket *pkt) {
     pthread_mutex_lock(&ti->mutex);
     gettimeofday(&tv, NULL);
     fprintf(stderr, "focal_encode,n/a,transmit_interface_add,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
     ti->pkt = pkt;
     ti->newPacket = 1;
     pthread_mutex_unlock(&ti->mutex);
-
-    gettimeofday(&tv, NULL);
-    fprintf(stderr, "focal_encode,calling,sched_yield,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
-
-    sched_yield();
-    gettimeofday(&tv, NULL);
-    fprintf(stderr, "focal_encode,returning,sched_yield,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
-}
+} */
 
 void* handle_input_to_startup_encoder(void* arg_struct) {
     e_input* e_in = (e_input*) arg_struct;
     l_queue* frame_q = e_in->frame_q;
-    transmit_interface_t* ti_pntr = e_in->ti;
+    l_queue* pkt_qp = e_in->pkt_q;
     int br = e_in->bitrate;
     // printf("freeing handoff struct\n");
     free(e_in);
-    setup_encoder(frame_q, ti_pntr, br);
+    setup_encoder(frame_q, pkt_qp, br);
 }
 
-void setup_encoder(l_queue* _q, transmit_interface_t* ti_pntr, int _bitrate) {
+void setup_encoder(l_queue* _q, l_queue* _pq, int _bitrate) {
     frame_q = _q;
-    ti = ti_pntr;
+    transmit_pkt_q = _pq;
     int bitrate = _bitrate;
 
     const AVCodec* codec;
@@ -175,6 +166,7 @@ void setup_encoder(l_queue* _q, transmit_interface_t* ti_pntr, int _bitrate) {
 
 void run_encoder(AVFrame* init_frame) {
     AVPacket* pkt; // packet variable used to receive and send encoded frame
+    AVFrame* frame;
     pkt = av_packet_alloc();
     if (!pkt) {
         fprintf(stderr, "Error: unable to allocate packet\n");
@@ -185,9 +177,13 @@ void run_encoder(AVFrame* init_frame) {
     pkt = NULL;
     
     /* run encoder loop */
-    AVFrame* frame;
+    
     while(1) {
         if (q_is_dead(frame_q)) {
+            printf("Encoder: Received signal to terminate, encoder shutting down\n");
+            break;
+        }
+        if (q_is_dead(transmit_pkt_q)) {
             printf("Encoder: Received signal to terminate, encoder shutting down\n");
             break;
         }
@@ -204,7 +200,7 @@ void run_encoder(AVFrame* init_frame) {
         pkt = av_packet_alloc();
         gettimeofday(&tv, NULL);
         fprintf(stderr, "focal_encode,calling,encode,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), frame->pkt_size, frame->pts);
-        encode(ctx, pkt, frame); // calls send_packet no need to here
+        encode(ctx, pkt, frame);
         gettimeofday(&tv, NULL);
         fprintf(stderr, "focal_encode,returning,encode,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
         pkt = NULL;
