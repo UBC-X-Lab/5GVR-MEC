@@ -3,13 +3,13 @@ LDFLAGS := -ldl -L$(HOME)/ffmpeg_build/lib -lavdevice -lavfilter -lavformat -lav
 CFLAGS := -I$(HOME)/ffmpeg_build/include -I$(HOME)/librist_build/include
 
 DummySenderFew: server_controller_static.c stream_receive_few_frame.o ../stream_decode.o ../focal_encode.c dummy_sender.c ../lockedQueue/locked_queue.o ../buildtimestamp.o
-	$(CC) -g server_controller_static.c stream_receive_few_frame.o ../stream_decode.o ../focal_encode.c dummy_sender.c ../lockedQueue/locked_queue.o ../buildtimestamp.o $(CFLAGS) $(LDFLAGS) -o DummySender
+	$(CC) server_controller_static.c stream_receive_few_frame.o ../stream_decode.o ../focal_encode.c dummy_sender.c ../lockedQueue/locked_queue.o ../buildtimestamp.o $(CFLAGS) $(LDFLAGS) -o DummySender
 
 DummySender: server_controller_static.c ../stream_receive.o ../stream_decode.o ../focal_encode.c dummy_sender.c ../lockedQueue/locked_queue.o ../buildtimestamp.o
-	$(CC) -g server_controller_static.c ../stream_receive.o ../stream_decode.o ../focal_encode.c dummy_sender.c ../lockedQueue/locked_queue.o ../buildtimestamp.o $(CFLAGS) $(LDFLAGS) -o DummySender
+	$(CC) server_controller_static.c ../stream_receive.o ../stream_decode.o ../focal_encode.c dummy_sender.c ../lockedQueue/locked_queue.o ../buildtimestamp.o $(CFLAGS) $(LDFLAGS) -o DummySender
 
 DummySenderAllQ: server_controller_static_allq.c ../stream_receive.o ../stream_decode.o ../focal_encode_allq.c dummy_sender_allq.c ../lockedQueue/locked_queue.o ../buildtimestamp.o
-	$(CC) -g server_controller_static_allq.c ../stream_receive.o ../stream_decode.o ../focal_encode_allq.c dummy_sender_allq.c ../lockedQueue/locked_queue.o ../buildtimestamp.o $(CFLAGS) $(LDFLAGS) -o DummySender
+	$(CC) server_controller_static_allq.c ../stream_receive.o ../stream_decode.o ../focal_encode_allq.c dummy_sender_allq.c ../lockedQueue/locked_queue.o ../buildtimestamp.o $(CFLAGS) $(LDFLAGS) -o DummySender
 
 clean:
 	rm DummySender DummySenderFew DummySenderAllQ
