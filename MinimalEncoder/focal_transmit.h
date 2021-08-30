@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <libavformat/avformat.h>
 #include <pthread.h>
+#include "lockedQueue/locked_queue.h"
 
 typedef struct transmit_interface
 {
@@ -14,7 +15,7 @@ typedef struct transmit_interface
     const AVPacket* pkt;
 } transmit_interface_t;
 
-void *transmit_connect(void* transmit_interface);
+void *transmit_connect(void* pkt_queue);
 
 void transmit();
 
