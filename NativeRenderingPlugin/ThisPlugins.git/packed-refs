@@ -1,0 +1,8 @@
+# pack-refs with: peeled fully-peeled sorted 
+ac76221773e889b6d5eefcac551cc05f0b121174 refs/remotes/origin/ios
+cebe85af2de836c7ee6198f7ca4b488519f2db78 refs/remotes/origin/master
+822c9b27de5eb51cc6835c273466b1cbb71fc831 refs/remotes/origin/temp_copu
+8c7f4d09f3cfe9a468b66151b16c2d5e85a0bad6 refs/tags/unity-2018.1
+808e85c647a708714fcc2a5631e4db02d3254aca refs/tags/unity-5.4
+8accb168a8deb32dc5d2cbec45982bbac55bc6e0 refs/tags/unity-5.5
+7938cdc0c0d3c96d129a89d21661419f9234f460 refs/tags/unity-5.6

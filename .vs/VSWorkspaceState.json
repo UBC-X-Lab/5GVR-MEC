@@ -1,0 +1,13 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\NativeRenderingPlugin",
+    "\\NativeRenderingPlugin\\PluginSource",
+    "\\NativeRenderingPlugin\\PluginSource\\source",
+    "\\VR_Endpoint",
+    "\\VR_Endpoint\\VR Endpoint",
+    "\\VR_Endpoint\\VR Endpoint\\Assets"
+  ],
+  "SelectedNode": "\\VR_Endpoint\\VR Endpoint\\Assets\\UseRenderingPlugin.cs",
+  "PreviewInSolutionExplorer": false
+}
