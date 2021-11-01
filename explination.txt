@@ -1,0 +1,1 @@
+This new branch exists to be the foundation for adding a clean directory of the augmented-x264 project void of any depricated files or objects.
