@@ -15,9 +15,9 @@
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 
-#include "focal_encode_allq.h"
+#include "focal_encode.h"
 #include "buildtimestamp.h"
-#include "focal_transmit_allq.h"
+#include "focal_transmit.h"
 #include "lockedQueue/locked_queue.h"
 
 l_queue* frame_q = NULL;

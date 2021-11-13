@@ -5,7 +5,7 @@
 #include <libavformat/avformat.h>
 #include <pthread.h>
 
-#include "focal_transmit_allq.h"
+#include "focal_transmit.h"
 #include "lockedQueue/locked_queue.h"
 
 typedef struct encode_input {

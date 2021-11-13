@@ -1,4 +1,4 @@
-#include "focal_transmit_allq.h"
+#include "focal_transmit.h"
 #include "buildtimestamp.h"
 #include "lockedQueue/locked_queue.h"
 #include <time.h>
@@ -13,7 +13,7 @@
 #include <string.h>
 #include <errno.h>
 #define MAX 80
-#define PORT "3495"
+#define PORT "27872"
 
 static l_queue* pkt_q;
 static int tsock;

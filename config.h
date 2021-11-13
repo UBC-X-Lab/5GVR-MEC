@@ -3,7 +3,7 @@
 #define HAVE_MMX 1
 #define ARCH_X86_64 1
 #define SYS_LINUX 1
-#define STACK_ALIGNMENT 64
+#define STACK_ALIGNMENT 16
 #define HAVE_POSIXTHREAD 1
 #define HAVE_CPU_COUNT 1
 #define HAVE_THREAD 1
@@ -12,6 +12,8 @@
 #define HAVE_CLOCK_GETTIME 1
 #define HAVE_MMAP 1
 #define HAVE_THP 1
+#define HAVE_SWSCALE 1
+#define HAVE_LAVF 1
 #define HAVE_AVS 1
 #define USE_AVXSYNTH 1
 #define HAVE_VECTOREXT 1
@@ -30,8 +32,6 @@
 #define HAVE_AARCH64 0
 #define HAVE_BEOSTHREAD 0
 #define HAVE_WIN32THREAD 0
-#define HAVE_SWSCALE 0
-#define HAVE_LAVF 0
 #define HAVE_FFMS 0
 #define HAVE_GPAC 0
 #define HAVE_LSMASH 0

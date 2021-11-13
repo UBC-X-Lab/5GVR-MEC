@@ -1,6 +1,6 @@
 # !/bin/bash
 rm -rf ~/ffmpeg_build ~/bin/{ffmpeg,ffprobe,ffplay,x264,x265} ~/ffmpeg_custom
-cd ~/Augmented-x264/
+cd ../../Augmentedx264/
 PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" --enable-static --enable-pic && \
 PATH="$HOME/bin:$PATH" make -j12 && \
 make -j12 install
@@ -19,7 +19,6 @@ PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./conf
   --enable-gpl \
   --enable-libass \
   --enable-libfreetype \
-  --enable-librist \
   --enable-libvorbis \
   --enable-libx264 \
   --enable-libxcb \

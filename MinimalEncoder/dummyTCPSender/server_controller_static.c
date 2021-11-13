@@ -15,10 +15,10 @@
 #include <libswscale/swscale.h>
 
 #include "../server_controller.h"
-#include "../focal_transmit_allq.h"
+#include "../focal_transmit.h"
 #include "../stream_decode.h"
 #include "../stream_receive.h"
-#include "../focal_encode_allq.h"
+#include "../focal_encode.h"
 #include "../lockedQueue/locked_queue.h"
 
 /* Parameters */

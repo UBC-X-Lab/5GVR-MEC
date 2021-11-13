@@ -30,7 +30,7 @@
 #include "lockedQueue/locked_queue.h"
 
 #define MAX 80
-#define PORT "4096"
+#define PORT "27873"
 // #define ADDRESS "192.168.1.60"
 #define SA struct sockaddr
 

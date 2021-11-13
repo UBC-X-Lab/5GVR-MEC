@@ -22,8 +22,8 @@
 #include "lockedQueue/locked_queue.h"
 
 /* Parameters */
-// static char* SRC_STREAM = "udp://@0.0.0.0:4000";
-static char* SRC_STREAM = "../test_files/1080pSample.mp4";
+//static char* SRC_STREAM = "udp://@0.0.0.0:4000";
+static char* SRC_STREAM = "../test_files/spiderman1080.mp4";
 struct timeval tv;
 
 pthread_attr_t attr;
@@ -89,8 +89,13 @@ int main(int argc, char **argv)
     }
 
     /* get AVFormatContext for decode thread and receive thread - NOTE it should only be open for one thread at a time NOT THREAD SAFE*/
-    if (avformat_open_input(&g_avFormatContext, SRC_STREAM, NULL, NULL) < 0) {
+    av_register_all();
+    avcodec_register_all();
+    char* errbuf;
+    if ((ret = avformat_open_input(&g_avFormatContext, SRC_STREAM, NULL, NULL)) < 0) {
         fprintf(stderr, "Error: could not open source stream %s\n", SRC_STREAM);
+	av_strerror(ret, errbuf, 100);
+	printf("error indicated by av_strerror: %s\n", errbuf);
         avformat_close_input(&g_avFormatContext);
         exit(1);
     }

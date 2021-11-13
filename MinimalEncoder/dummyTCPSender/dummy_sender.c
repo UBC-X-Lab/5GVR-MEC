@@ -1,6 +1,6 @@
 
 #include "../buildtimestamp.h"
-#include "../focal_transmit_allq.h"
+#include "../focal_transmit.h"
 #include "../lockedQueue/locked_queue.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,8 +19,8 @@
 #include <errno.h>
 
 #define MAX 80
-#define destinationIP "192.168.1.60"
-#define destinationPort "4096"
+#define destinationIP "74.198.53.47"
+#define destinationPort "27873"
 #define SA struct sockaddr
 #define INVALID_SOCKET          (~0)//(SOCKET)(~0)
 #define SOCKET_ERROR            (-1)
