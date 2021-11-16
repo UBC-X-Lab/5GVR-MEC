@@ -49,4 +49,7 @@ void *x264_get_in_addr(struct sockaddr *sa);
 #define x264_focal_disconnect x264_template(focal_disconnect)
 void *x264_focal_disconnect();
 
+#define x264_tcp_connection_helper x264_template(tcp_connection_helper)
+int x264_tcp_connection_helper(char* port);
+
 #endif

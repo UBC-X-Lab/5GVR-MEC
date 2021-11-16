@@ -32,6 +32,11 @@
 #include <arpa/inet.h>
 #include <time.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 #define MAXBUFLEN 188
@@ -40,7 +45,7 @@ enum connection_status {disconnected, connected_send_parameters, connected_await
 
 void *x264_focal_connect(x264_focal_input_t* ptr){
     //Init
-    char* host = "192.168.1.60"; //The IP address to connect to
+    char* host = "0.0.0.0"; //The IP address to connect to
     char* tcpPort = "27870"; // the port connected to for TCP "control" connection
     char* udpPort = "27871"; // the port listened on for UDP "data" connection
     clock_t resend_parameters;
@@ -75,32 +80,7 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                 x264_pthread_mutex_unlock(&pos_data->mutex);
 
             //Open socket for TCP control connection
-                memset(&hints, 0, sizeof hints);
-	            hints.ai_family = AF_UNSPEC;
-	            hints.ai_socktype = SOCK_STREAM;
-
-                if ((rv = getaddrinfo(host, tcpPort, &hints, &servinfo)) != 0) {
-                    printf("Error in focal_connect: Invalid address: %s\n", gai_strerror(rv));
-                    return 1;
-                }
-                // loop through all the results and connect to the first we can
-                for(p = servinfo; p != NULL; p = p->ai_next) {
-                    if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-                        continue;
-                    }
-
-                    if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-                        close(sockfd);
-                        continue;
-                    }
-                    break;
-                }
-                if (p == NULL) {
-                    printf("focal_connect: could not connect to server, retry in 1 second\n");
-                    wait(1000); //Wait one second and try again
-                    break;
-                }
-                freeaddrinfo(servinfo); // all done with this structure
+                sockfd = x264_tcp_connection_helper(tcpPort);
 
             //Open socket for UDP data connection
                 memset(&d_hints, 0, sizeof d_hints);
@@ -186,4 +166,88 @@ void *x264_get_in_addr(struct sockaddr *sa)
 		return &(((struct sockaddr_in*)sa)->sin_addr);
 	}
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
+// helper function to listen and set up tcp connection
+int x264_tcp_connection_helper(char* port) {
+	int yes = 1;// for setsockopt() SO_REUSEADDR, below
+	int ret;
+	
+	int sockfd, connfd, len;
+
+	struct sockaddr_in servaddr, cli;
+	struct sockaddr_storage their_addr;
+	struct addrinfo hints, *serverinfo, *p;
+	socklen_t sin_size;
+
+	char s[INET6_ADDRSTRLEN]; // to store connection addr
+
+	//setup hints and getaddr info for establishing good connection
+	memset(&hints, 0, sizeof(hints));
+
+	hints.ai_family = AF_INET; // IPV4 or 6 doesn't matter
+	hints.ai_socktype = SOCK_STREAM; // this enables a TCP connection 
+	hints.ai_flags = AI_PASSIVE;
+	if ((ret = getaddrinfo(NULL, port, &hints, &serverinfo)) != 0) {
+		fprintf(stdout, "getaddrinfo: %s\n", gai_strerror(ret));
+		return 1;
+	}
+
+	// walk serverinfo linked list and bind to first valid address
+	for (p = serverinfo; p != NULL; p = p->ai_next) {
+		//create socket
+		if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+			perror("[Focal connect]socket");
+			continue; 
+		}
+		printf("Socket successfully created..\n");
+		// to avoid address already in use error messages and allow binding
+		if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+			perror("setsockopt");
+			exit(1);
+		}
+
+		// attempt to bind to socket
+		if ((ret = bind(sockfd, p->ai_addr, p->ai_addrlen)) == -1) {
+			close(sockfd);
+			perror("[Focal connect] bind");
+			continue;
+		}
+
+		printf("Socket successfully binded..\n");
+		//found a good one
+		break; 
+	}
+	// don't need this anymore
+	freeaddrinfo(serverinfo);
+
+	// check to make sure socket actually binded and that the loop did not just run out of entries
+	if (p == NULL) {
+		fprintf(stderr, "[Focal connect] failed to bind\n");
+		exit(1);
+	}
+
+    // Now server is ready to listen and verification 
+    if ((listen(sockfd, 5)) != 0) { 
+        printf("[Focal connect] Listen failed...\n"); 
+        exit(1); 
+    } 
+	printf("[Focal connect] listening...\n");
+
+	while(1) {
+		sin_size = sizeof their_addr;
+		printf("[Focal connect] Waiting for connection...\n");
+		// accept connection
+    	connfd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size); 
+    	if (connfd < 0) { 
+        	printf("server accept failed...%s\n", gai_strerror(errno));
+        	continue; 
+    	}
+		printf("server accepted client\n");
+		inet_ntop(their_addr.ss_family, x264_get_in_addr((struct sockaddr *)&cli), s, sizeof s);
+		printf("[Focal connect] accepted connection from %s\n", s);
+		break;
+
+	}
+	return connfd;
 }
