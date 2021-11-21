@@ -1,17 +1,4 @@
 *.DS_Store
-IDSense-Lite/data/*
-*.ipynb_checkpoints
-*start_time.txt
-*o3d
-
-*pycache*
-*.vscode
-
-Info
-*.mp4
-
-pymc/*
-data_viz/*
 
 [Ll]ibrary/
 [Tt]emp/
