@@ -88,6 +88,9 @@ int main(int argc, char **argv)
         sched_yield();
     }
 
+    av_register_all();
+    avcodec_register_all();
+
     /* get AVFormatContext for decode thread and receive thread - NOTE it should only be open for one thread at a time NOT THREAD SAFE*/
     if (avformat_open_input(&g_avFormatContext, SRC_STREAM, NULL, NULL) < 0) {
         fprintf(stderr, "Error: could not open source stream %s\n", SRC_STREAM);
