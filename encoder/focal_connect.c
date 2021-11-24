@@ -139,7 +139,7 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                         exit(1); 
                     } 
 	                printf("Server listening...\n");
-	                void* get_in_addr(struct sockaddr *sa);
+	                void* x264_get_in_addr(struct sockaddr *sa);
 
 	                while(1) {
 		                sin_size = sizeof their_addr;
@@ -151,7 +151,7 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                         	continue; 
     	                }
 		                printf("server accepted client\n");
-		                inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&cli), s, sizeof s);
+		                inet_ntop(their_addr.ss_family, x264_get_in_addr((struct sockaddr *)&cli), s, sizeof s);
 		                printf("stream_receive_custom_protocoltransmit_server: accepted connection from %s\n", s);
                         close(d_sockfd);
 		                break;
@@ -159,7 +159,7 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                 }
 
                 d_sockfd = dtcp_sockfd;
-                
+
                 if(fcntl(d_sockfd, F_SETFL, O_NONBLOCK) == -1){
                     printf("Data socket could not be set to non-blocking");
                 }
