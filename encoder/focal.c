@@ -178,8 +178,8 @@ float x264_focal_abs_distance(x264_float2_t mb_pos){
     }
     // video is fisheye (spherical)
     mb_point = x264_focal_getSpherePos_sphereInput(mb_pos);
-    float focal_mag = sqrt(focal_point.x**2 + focal_point.y**2 + focal_point.z**2);
-    float mb_point_mag = sqrt(mb_point.x**2 + mb_point.y**2 + focal_point.z**2);
+    float focal_mag = sqrt(pow(focal_point.x, 2) + pow(focal_point.y, 2) + pow(focal_point.z, 2));
+    float mb_point_mag = sqrt(pow(mb_point.x, 2) + pow(mb_point.y, 2) + pow(mb_point.z,2));
     float mb_dot_focal = (focal_point.x * mb_point.x) + (focal_point.y * mb_point.y) + (focal_point.z * mb_point.z);
     float angle = acosf(mb_dot_focal/ (focal_mag * mb_point_mag));
     return sinf(angle/4) * 2;
@@ -236,7 +236,7 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     // find h -- note though the real x and y are scalar multiples of h
     // we know the output should be normalized so sqrt(x^2 + y^2 + z^2) = 1 
     // => x^2 + y^ 2 = 1 - z^2. We by the relation of x and y, h^2 = x^2 + y^2, so h = sqrt(1-z^2) 
-    float h = sqrt(1 - sphereCoords.z**2);
+    float h = sqrt(1 - pow(sphereCoords.z, 2));
     sphereCoords.x = temp_x * h;
     sphereCoords.y = temp_y * h;
     
