@@ -207,11 +207,13 @@ void *recv_thread(void *arg) {
         break;
       }
       struct stream_header *hdr = (void *)buf;
-      fprintf(stderr, "stream data: type=0x%x timestamp=%llu len=%zu\n", hdr->type, hdr->timestamp, pkt.size - sizeof(struct stream_header));
-      uint32_t sendsize = pkt.size - sizeof(struct stream_header);
-      uint32_t n_sendsize = htonl(sendsize);
-      xsendall(args->dest_fd, &n_sendsize, sizeof(n_sendsize));
-      xsendall(args->dest_fd, hdr + 1, sendsize);
+      //fprintf(stderr, "stream data: type=0x%x timestamp=%llu len=%zu\n", hdr->type, hdr->timestamp, pkt.size - sizeof(struct stream_header));
+      if (hdr->type == STREAM_TYPE_VIDEO_1) {
+	uint32_t sendsize = pkt.size - sizeof(struct stream_header);
+        uint32_t n_sendsize = htonl(sendsize);
+        xsendall(args->dest_fd, &n_sendsize, sizeof(n_sendsize));
+        xsendall(args->dest_fd, hdr + 1, sendsize);
+      }
       free(buf);
       break;
     }
@@ -263,7 +265,7 @@ int main(int argc, char **argv) {
 
   sa.sin_family = AF_INET;
   sa.sin_port = htons(27873);
-  inet_pton(AF_INET, "10.249.146.111", &sa.sin_addr);
+  inet_pton(AF_INET, "172.17.69.216", &sa.sin_addr);
   int dest_sock = connect_tcp(&sa, 1000);
   if (dest_sock < 0) {
     perror("connect_tcp mec");
@@ -291,7 +293,7 @@ int main(int argc, char **argv) {
   sls.audiosamplerate = 48000;
 //   sls.audiobitrate = 320000;
 //   sls.videobitrate = 40000000;
-  sls.resolution = INSTA360__MESSAGES__VIDEO_RESOLUTION__RES_2880_2880P30;
+  sls.resolution = INSTA360__MESSAGES__VIDEO_RESOLUTION__RES_3840_1920P30;
   sls.enablegyro = 0;
 
   size_t payload_len = insta360__messages__start_live_stream__get_packed_size(&sls);
