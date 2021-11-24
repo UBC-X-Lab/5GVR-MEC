@@ -59,19 +59,21 @@ static long double stat_total_qp = 1;
 static long double stat_total_count = 1;
 
 // Hardcoded Dimensions of center points for sphere halves on spherical video
-x264_float2_t lensCenter_right;
-lensCenter_right.x = (4575.319 / 6080);
-lenseCenter_right.y = (1521.183 / 3040);
-x264_float2_t lensRadius_right;
-lensCenter_right.x = (1430.017 / 6080);
-lenseCenter_right.y = (1430.017 / 3040);
-x264_float2_t lensCenter_left;
-lensCenter_left.x = (1530.073 / 6080);
-lenseCenter_left.y = (1515.421 / 3040);
-x264_float2_t lensRadius_left;
-lensCenter_left.x = (1425.675 / 6080);
-lenseCenter_left.y = (1425.675 / 3040);
+
+static float lensCenter_right_x = (4575.319 / 6080);
+static float lenseCenter_right_y = (1521.183 / 3040);
+
+static float lensCenter_right_x = (1430.017 / 6080);
+static float lenseCenter_right_y = (1430.017 / 3040);
+
+static float lensCenter_left_x = (1530.073 / 6080);
+static float lenseCenter_left_y = (1515.421 / 3040);
+
+static float lensCenter_left_x = (1425.675 / 6080);
+static float lenseCenter_left_y = (1425.675 / 3040);
 static float HALF_BOUNDARY = (6080/2);
+
+static float SCALE = 180/186;
 
 // returns in-focus qp within valid range
 int x264_focal_qp_improve( x264_t *h, int dist ){
@@ -229,8 +231,9 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     x264_float2_t radius;
     radius.x = mb_pos.x - lenseCenter.x;
     radius.y = mb_pos.y - lenseCenter.y;
-    float temp_x = mb_pos.x / (radius * (lenseCenter + lensRadius));
-    float temp_y = mb_pos.y / (radius * (lenseCenter + lensRadius));
+    // lenses_Center+lense_Radius
+    float temp_x = mb_pos.x / (radius * (lenseCenter.x + lensRadius.x));
+    float temp_y = mb_pos.y / (radius * (lenseCenter.y + lensRadius.y));
     x264_float3_t sphereCoords;
     sphereCoords.z = sign * cosf(radius / SCALE) * (UNITY_PI / 2);
     // find h -- note though the real x and y are scalar multiples of h
