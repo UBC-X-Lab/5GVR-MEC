@@ -59,16 +59,16 @@ static long double stat_total_qp = 1;
 static long double stat_total_count = 1;
 
 // Hardcoded Dimensions of center points for sphere halves on spherical video
-static x264_float2_t lensCenter_right;
+x264_float2_t lensCenter_right;
 lensCenter_right.x = (4575.319 / 6080);
 lenseCenter_right.y = (1521.183 / 3040);
-static x264_float2_t lensRadius_right;
+x264_float2_t lensRadius_right;
 lensCenter_right.x = (1430.017 / 6080);
 lenseCenter_right.y = (1430.017 / 3040);
-static x264_float2_t lensCenter_left;
+x264_float2_t lensCenter_left;
 lensCenter_left.x = (1530.073 / 6080);
 lenseCenter_left.y = (1515.421 / 3040);
-static x264_float2_t lensRadius_left;
+x264_float2_t lensRadius_left;
 lensCenter_left.x = (1425.675 / 6080);
 lenseCenter_left.y = (1425.675 / 3040);
 static float HALF_BOUNDARY = (6080/2);
@@ -178,8 +178,8 @@ float x264_focal_abs_distance(x264_float2_t mb_pos){
     }
     // video is fisheye (spherical)
     mb_point = x264_focal_getSpherePos_sphereInput(mb_pos);
-    float focal_mag = sqrt(focal_point.x^2 + focal_point.y^2 + focal_point.z^2);
-    float mb_point_mag = sqrt(mb_point.x^2 + mb_point.y^2 + focal_point.z^2);
+    float focal_mag = sqrt(focal_point.x**2 + focal_point.y**2 + focal_point.z**2);
+    float mb_point_mag = sqrt(mb_point.x**2 + mb_point.y**2 + focal_point.z**2);
     float mb_dot_focal = (focal_point.x * mb_point.x) + (focal_point.y * mb_point.y) + (focal_point.z * mb_point.z);
     float angle = acosf(mb_dot_focal/ (focal_mag * mb_point_mag));
     return sinf(angle/4) * 2;
@@ -231,12 +231,12 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     radius.y = mb_pos.y - lenseCenter.y;
     float temp_x = mb_pos.x / (radius * (lenseCenter + lensRadius));
     float temp_y = mb_pos.y / (radius * (lenseCenter + lensRadius));
-    x264_float2_t sphereCoords;
+    x264_float3_t sphereCoords;
     sphereCoords.z = sign * cosf(radius / SCALE) * (UNITY_PI / 2);
     // find h -- note though the real x and y are scalar multiples of h
     // we know the output should be normalized so sqrt(x^2 + y^2 + z^2) = 1 
     // => x^2 + y^ 2 = 1 - z^2. We by the relation of x and y, h^2 = x^2 + y^2, so h = sqrt(1-z^2) 
-    float h = sqrt(1 - sphereCoords.z^2);
+    float h = sqrt(1 - sphereCoords.z**2);
     sphereCoords.x = temp_x * h;
     sphereCoords.y = temp_y * h;
     
