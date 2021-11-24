@@ -44,7 +44,7 @@ static const float thresh = 1.2; //2 = 360degree, sqrt 2 = 180degree, 1 = 120deg
 static const int focal_diff = 5; //added/subtracted to qp depending whether mb is in focus
 static int dd = 0; //The difference between original qp of first frame and current qp
 static int rc_qp = 0;
-
+  
 static int valid_pos = 0;
 x264_float3_t focal_point;
 
@@ -57,6 +57,21 @@ static int num = 1; //used to print qp every 100000 mb
 static int stat_max_qp = -1;
 static long double stat_total_qp = 1;
 static long double stat_total_count = 1;
+
+// Hardcoded Dimensions of center points for sphere halves on spherical video
+static x264_float2_t lensCenter_right;
+lensCenter_right.x = (4575.319 / 6080);
+lenseCenter_right.y = (1521.183 / 3040);
+static x264_float2_t lensRadius_right;
+lensCenter_right.x = (1430.017 / 6080);
+lenseCenter_right.y = (1430.017 / 3040);
+static x264_float2_t lensCenter_left;
+lensCenter_left.x = (1530.073 / 6080);
+lenseCenter_left.y = (1515.421 / 3040);
+static x264_float2_t lensRadius_left;
+lensCenter_left.x = (1425.675 / 6080);
+lenseCenter_left.y = (1425.675 / 3040);
+static float HALF_BOUNDARY = (6080/2);
 
 // returns in-focus qp within valid range
 int x264_focal_qp_improve( x264_t *h, int dist ){
@@ -83,6 +98,7 @@ int x264_focal_reallocate_qp( x264_t *h )
     char* disable_focal = getenv("DISABLE_FOCAL");
     int isFocalDisabled = 1; //this value should be 0
     if(disable_focal!=NULL) isFocalDisabled = atoi(disable_focal);
+    
     //return x264_ratecontrol_mb_qp( h );
     //once at the beginning of each frame
     if(h->mb.i_mb_x == 0 && h->mb.i_mb_y == 0){
@@ -140,13 +156,33 @@ int x264_focal_reallocate_qp( x264_t *h )
     //return x264_focal_qp_worsen(h, dist);
 }
 
+// calculate the distance between macroblock position and the head data projected onto the sphere
+// if environment variable INPUT==PLANE then we want to use calculation for foveation from planar video source
+// else do caluclations assuming spherical input video
 float x264_focal_abs_distance(x264_float2_t mb_pos){
-    x264_float3_t mb_point = x264_focal_getSpherePos(mb_pos);
-    x264_float3_t delta;
-    delta.x = mb_point.x - focal_point.x;
-    delta.y = mb_point.y - focal_point.y;
-    delta.z = mb_point.z - focal_point.z;
-    return (float) sqrt( ( delta.x * delta.x ) + ( delta.y * delta.y ) + ( delta.z * delta.z ) );
+    // get enviornment variable to determine how distance is calculated for macroblock
+    int isVideoPlane = 0;
+    char* input_video_geometry = getenv("INPUT");
+    if(input_video_geometry!=NULL) {
+        isVideoPlane = ("PLANE" == input_video_geometry);
+    }
+    x264_float3_t mb_point;
+    // decision on how to calculate distance for macroblock position based on input video geometry
+    if (isVideoPlane) {
+        mb_point = x264_focal_getSpherePos(mb_pos);
+        x264_float3_t delta;
+        delta.x = mb_point.x - focal_point.x;
+        delta.y = mb_point.y - focal_point.y;
+        delta.z = mb_point.z - focal_point.z;
+        return (float) sqrt( ( delta.x * delta.x ) + ( delta.y * delta.y ) + ( delta.z * delta.z ) );
+    }
+    // video is fisheye (spherical)
+    mb_point = x264_focal_getSpherePos_sphereInput(mb_pos);
+    float focal_mag = sqrt(focal_point.x^2 + focal_point.y^2 + focal_point.z^2);
+    float mb_point_mag = sqrt(mb_point.x^2 + mb_point.y^2 + focal_point.z^2);
+    float mb_dot_focal = (focal_point.x * mb_point.x) + (focal_point.y * mb_point.y) + (focal_point.z * mb_point.z);
+    float angle = acosf(mb_dot_focal/ (focal_mag * mb_point_mag));
+    return sinf(angle/4) * 2;
 }
 
 x264_float3_t x264_focal_float3_normalize( x264_float3_t vector ){
@@ -176,4 +212,33 @@ x264_float3_t x264_focal_getSpherePos( x264_float2_t mb_pos){
     normalized_coords.x = -sinf(longitude) * radius;
     normalized_coords.z = -cosf(longitude) * radius;
     return normalized_coords;
+}
+
+// calculate normalized vector that passes through the macroblocks position on sphere in unity endpoint
+x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
+    int sign = -1;
+    x264_float2_t lenseCenter = lensCenter_left;
+    x264_float2_t lensRadius = lensRadius_left;
+    if (mb_pos.x > HALF_BOUNDARY) {
+        //right sphere corresponds to positive z
+        sign = 1;
+        lenseCenter = lensCenter_right;
+        lensRadius = lensRadius_right;
+    }
+    // calculate distance from center of sphere the macroblock lies on
+    x264_float2_t radius;
+    radius.x = mb_pos.x - lenseCenter.x;
+    radius.y = mb_pos.y - lenseCenter.y;
+    float temp_x = mb_pos.x / (radius * (lenseCenter + lensRadius));
+    float temp_y = mb_pos.y / (radius * (lenseCenter + lensRadius));
+    x264_float2_t sphereCoords;
+    sphereCoords.z = sign * cosf(radius / SCALE) * (UNITY_PI / 2);
+    // find h -- note though the real x and y are scalar multiples of h
+    // we know the output should be normalized so sqrt(x^2 + y^2 + z^2) = 1 
+    // => x^2 + y^ 2 = 1 - z^2. We by the relation of x and y, h^2 = x^2 + y^2, so h = sqrt(1-z^2) 
+    float h = sqrt(1 - sphereCoords.z^2);
+    sphereCoords.x = temp_x * h;
+    sphereCoords.y = temp_y * h;
+    
+    return sphereCoords;
 }

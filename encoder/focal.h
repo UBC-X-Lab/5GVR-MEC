@@ -62,4 +62,7 @@ x264_float2_t x264_focal_float2_normalize( x264_float2_t vector );
 #define x264_focal_getSpherePos x264_template(focal_getSpherePos)
 x264_float3_t x264_focal_getSpherePos( x264_float2_t mb_pos);
 
+#define x264_focal_getSpherePos_sphereInput x264_template(focal_getSpherePos_sphereInput)
+x264_float3_t x264_focal_getSpherePos_sphereInput( x264_float2_t mb_pos);
+
 #endif
