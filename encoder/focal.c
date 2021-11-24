@@ -223,24 +223,31 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     lenseCenter.x = lensCenter_left_x;
     lenseCenter.y = lensCenter_left_y;
     x264_float2_t lenseRadius;
-    lenseRadius.x = lensRadius_left_x;
-    lenseRadius.y = lensRadius_left_y;
+    lenseRadius = sqrt(pow(lensRadius_left_x, 2) + pow(lensRadius_left_y, 2));
     if (mb_pos.x > HALF_BOUNDARY) {
         //right sphere corresponds to positive z
         sign = 1;
         lenseCenter.x = lensCenter_right_x;
         lenseCenter.y = lensCenter_right_y;
-        lenseRadius.x = lensRadius_right_x;
-        lenseRadius.y = lensRadius_right_y;
+        lenseRadius = sqrt(pow(lensRadius_right_x, 2) + pow(lensRadius_right_y, 2));
     }
     // calculate distance from center of sphere the macroblock lies on
     x264_float2_t radius;
     radius.x = mb_pos.x - lenseCenter.x;
     radius.y = mb_pos.y - lenseCenter.y;
-    // lenses_Center+lense_Radius
-    float temp_x = mb_pos.x / (radius.x * (lenseCenter.x + lenseRadius.x));
-    float temp_y = mb_pos.y / (radius.y * (lenseCenter.y + lenseRadius.y));
+    float scalar_r = (sqrt(pow(radius.x, 2) + pow(radius.y, 2));
     x264_float3_t sphereCoords;
+    if (scalar_r > lenseRadius) {
+        sphereCoords.x = 0;
+        sphereCoords.y = 0;
+        sphereCoords.z = 0;
+        return sphereCoords;
+    }
+    scalar_r = scalar_r/lense_Radius;
+    // lenses_Center+lense_Radius
+    float temp_x = mb_pos.x / (scalar_r * lenseRadius));
+    float temp_y = mb_pos.y / (scalar_r * lenseRadius));
+    
     sphereCoords.z = sign * cosf(sqrt(pow(radius.x, 2) + pow(radius.y, 2)) / SCALE) * (UNITY_PI / 2);
     // find h -- note though the real x and y are scalar multiples of h
     // we know the output should be normalized so sqrt(x^2 + y^2 + z^2) = 1 
