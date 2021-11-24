@@ -263,8 +263,7 @@ int main(int argc, char **argv) {
 
   sa.sin_family = AF_INET;
   sa.sin_port = htons(27873);
-  // inet_pton(AF_INET, "10.249.146.111", &sa.sin_addr);
-  inet_pton(AF_INET, "", &sa.sin_addr);
+  inet_pton(AF_INET, "10.249.146.111", &sa.sin_addr);
   int dest_sock = connect_tcp(&sa, 1000);
   if (dest_sock < 0) {
     perror("connect_tcp mec");
