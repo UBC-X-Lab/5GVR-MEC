@@ -63,14 +63,14 @@ static long double stat_total_count = 1;
 static float lensCenter_right_x = (4575.319 / 6080);
 static float lenseCenter_right_y = (1521.183 / 3040);
 
-static float lensCenter_right_x = (1430.017 / 6080);
-static float lenseCenter_right_y = (1430.017 / 3040);
+static float lensRadius_right_x = (1430.017 / 6080);
+static float lenseRadius_right_y = (1430.017 / 3040);
 
 static float lensCenter_left_x = (1530.073 / 6080);
 static float lenseCenter_left_y = (1515.421 / 3040);
 
-static float lensCenter_left_x = (1425.675 / 6080);
-static float lenseCenter_left_y = (1425.675 / 3040);
+static float lensRadius_left_x = (1425.675 / 6080);
+static float lenseRadius_left_y = (1425.675 / 3040);
 static float HALF_BOUNDARY = (6080/2);
 
 static float SCALE = 180/186;
@@ -219,13 +219,19 @@ x264_float3_t x264_focal_getSpherePos( x264_float2_t mb_pos){
 // calculate normalized vector that passes through the macroblocks position on sphere in unity endpoint
 x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     int sign = -1;
-    x264_float2_t lenseCenter = lensCenter_left;
-    x264_float2_t lensRadius = lensRadius_left;
+    x264_float2_t lenseCenter; 
+    lenseCenter.x = lensCenter_left_x;
+    lenseCenter.y = lensCenter_left_y;
+    x264_float2_t lensRadius;
+    lenseRadius.x = lensRadius_left.x;
+    lenseRadius.y = lensRadius_left.y;
     if (mb_pos.x > HALF_BOUNDARY) {
         //right sphere corresponds to positive z
         sign = 1;
-        lenseCenter = lensCenter_right;
-        lensRadius = lensRadius_right;
+        lenseCenter.x = lensCenter_right_x;
+        lenseCenter.y = lensCenter_right_y;
+        lenseRadius.x = lensRadius_right.x;
+        lenseRadius.y = lensRadius_right.y;
     }
     // calculate distance from center of sphere the macroblock lies on
     x264_float2_t radius;
@@ -235,7 +241,7 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     float temp_x = mb_pos.x / (radius * (lenseCenter.x + lensRadius.x));
     float temp_y = mb_pos.y / (radius * (lenseCenter.y + lensRadius.y));
     x264_float3_t sphereCoords;
-    sphereCoords.z = sign * cosf(radius / SCALE) * (UNITY_PI / 2);
+    sphereCoords.z = sign * cosf(sqrt(pow(radius.x, 2) + pow(radius.y, 2)) / SCALE) * (UNITY_PI / 2);
     // find h -- note though the real x and y are scalar multiples of h
     // we know the output should be normalized so sqrt(x^2 + y^2 + z^2) = 1 
     // => x^2 + y^ 2 = 1 - z^2. We by the relation of x and y, h^2 = x^2 + y^2, so h = sqrt(1-z^2) 
