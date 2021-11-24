@@ -120,7 +120,7 @@ public class PositionSender : MonoBehaviour
         active = true;
         mut.ReleaseMutex();
         // cant find an abstract class to use a single object so creating two and then only connet one
-        TcpClient transmitClientTCP = new TcpClient(destination.ToString(), StreamPort);
+        TcpClient transmitClientTCP = new TcpClient();
         UdpClient transmitClientUDP = new UdpClient();
         NetworkStream TCPStream = null;
         

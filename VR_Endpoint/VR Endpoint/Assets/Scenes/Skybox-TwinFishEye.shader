@@ -40,7 +40,7 @@ SubShader {
             float theta = atan2(normalizedCoords.y, normalizedCoords.x);
             //float r = sqrt(1 - normalizedCoords.z * normalizedCoords.z);
             float r = acos(abs(normalizedCoords.z)) / (UNITY_PI / 2) * 180/186;
-            return lensCenter + lensRadius * float2(r * cos(theta), r * sin(theta));
+            return lensCenter + lensRadius * float2(r * cos(theta), -1 * r * sin(theta));
         }
 
         struct appdata_t {

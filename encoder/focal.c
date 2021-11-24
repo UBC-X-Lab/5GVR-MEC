@@ -98,7 +98,7 @@ int x264_focal_qp_worsen( x264_t *h, int dist ){
 int x264_focal_reallocate_qp( x264_t *h )
 {
     char* disable_focal = getenv("DISABLE_FOCAL");
-    int isFocalDisabled = 1; //this value should be 0
+    int isFocalDisabled = 0; //this value should be 0
     if(disable_focal!=NULL) isFocalDisabled = atoi(disable_focal);
     
     //return x264_ratecontrol_mb_qp( h );
@@ -255,7 +255,7 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     // => x^2 + y^ 2 = 1 - z^2. We by the relation of x and y, h^2 = x^2 + y^2, so h = sqrt(1-z^2) 
     float h = sqrt(1 - pow(sphereCoords.z, 2));
     sphereCoords.x = temp_x * h;
-    sphereCoords.y = - temp_y * h;
+    sphereCoords.y = temp_y * h;
     
     return sphereCoords;
 }
