@@ -52,7 +52,7 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
 
     enum connection_status cStatus = disconnected;
 
-    int sockfd, d_sockfd, numbytes;  
+    int sockfd, d_sockfd, dtcp_sockfd, numbytes;  
 	struct addrinfo hints, d_hints, *servinfo, *d_servinfo, *p, *d_p;
     char d_buf[MAXBUFLEN];
 	int rv, ret;
@@ -134,7 +134,7 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
 
                 if (isTCP) {
                     // Now server is ready to listen and verification 
-                    if ((listen(sockfd, 5)) != 0) { 
+                    if ((listen(d_sockfd, 5)) != 0) { 
                         printf("Listen failed...\n"); 
                         exit(1); 
                     } 
@@ -145,19 +145,21 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
 		                sin_size = sizeof their_addr;
 		                printf("Waiting for connection...\n");
 		                // accept connection
-    	                connfd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size); 
-    	                if (connfd < 0) { 
+    	                dtcp_sockfd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size); 
+    	                if (dtcp_sockfd < 0) { 
                     	printf("server accept failed...%s\n", gai_strerror(errno));
                         	continue; 
     	                }
 		                printf("server accepted client\n");
 		                inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&cli), s, sizeof s);
 		                printf("stream_receive_custom_protocoltransmit_server: accepted connection from %s\n", s);
+                        close(d_sockfd);
 		                break;
-
 	                }
                 }
 
+                d_sockfd = dtcp_sockfd;
+                
                 if(fcntl(d_sockfd, F_SETFL, O_NONBLOCK) == -1){
                     printf("Data socket could not be set to non-blocking");
                 }
