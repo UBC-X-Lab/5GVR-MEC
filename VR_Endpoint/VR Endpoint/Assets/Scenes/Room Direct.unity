@@ -153,7 +153,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mat: {fileID: 2100000, guid: 32134affaf984164dbaa70077c5b2b62, type: 2}
-  destinationIP: 74.198.53.47
+  destinationIP: 172.17.69.216
   destinationPort: 27872
 --- !u!23 &1395542750
 MeshRenderer:
@@ -611,7 +611,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 387779c82b5fe3745b6e559fa569c312, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  destinationPort: 27871
+  ServerAddrAsString: 10.249.146.111
+  controlPort: 27870
+  StreamPort: 27871
+  isTCP: 1
 --- !u!114 &2121124075
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -55,8 +55,12 @@ public class PositionServer : MonoBehaviour
 
     private void OnDestroy()
     {
-        focalTransmit.Abort();
+        if (active) {
+            focalTransmit.Abort();
+        }
+        if (send) {
         focalControl.Abort();
+        }
         print("[Position Server] Killed all threads.");
     }
 

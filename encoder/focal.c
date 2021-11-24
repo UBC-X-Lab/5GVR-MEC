@@ -166,7 +166,8 @@ float x264_focal_abs_distance(x264_float2_t mb_pos){
     int isVideoPlane = 0;
     char* input_video_geometry = getenv("INPUT");
     if(input_video_geometry!=NULL) {
-        isVideoPlane = ("PLANE" == input_video_geometry);
+        // strcmp returns 0 if they are equal
+        isVideoPlane = (!strcmp("PLANE", input_video_geometry));
     }
     x264_float3_t mb_point;
     // decision on how to calculate distance for macroblock position based on input video geometry
@@ -254,7 +255,7 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     // => x^2 + y^ 2 = 1 - z^2. We by the relation of x and y, h^2 = x^2 + y^2, so h = sqrt(1-z^2) 
     float h = sqrt(1 - pow(sphereCoords.z, 2));
     sphereCoords.x = temp_x * h;
-    sphereCoords.y = temp_y * h;
+    sphereCoords.y = - temp_y * h;
     
     return sphereCoords;
 }
