@@ -222,7 +222,7 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     x264_float2_t lenseCenter; 
     lenseCenter.x = lensCenter_left_x;
     lenseCenter.y = lensCenter_left_y;
-    x264_float2_t lensRadius;
+    x264_float2_t lenseRadius;
     lenseRadius.x = lensRadius_left_x;
     lenseRadius.y = lensRadius_left_y;
     if (mb_pos.x > HALF_BOUNDARY) {
@@ -238,8 +238,8 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     radius.x = mb_pos.x - lenseCenter.x;
     radius.y = mb_pos.y - lenseCenter.y;
     // lenses_Center+lense_Radius
-    float temp_x = mb_pos.x / (radius.x * (lenseCenter.x + lensRadius.x));
-    float temp_y = mb_pos.y / (radius.y * (lenseCenter.y + lensRadius.y));
+    float temp_x = mb_pos.x / (radius.x * (lenseCenter.x + lenseRadius.x));
+    float temp_y = mb_pos.y / (radius.y * (lenseCenter.y + lenseRadius.y));
     x264_float3_t sphereCoords;
     sphereCoords.z = sign * cosf(sqrt(pow(radius.x, 2) + pow(radius.y, 2)) / SCALE) * (UNITY_PI / 2);
     // find h -- note though the real x and y are scalar multiples of h
