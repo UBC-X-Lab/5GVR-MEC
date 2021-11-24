@@ -57,6 +57,10 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
     char d_buf[MAXBUFLEN];
 	int rv, ret;
     int yes = 1; // for setsockopt() SO_REUSEADDR, below
+    struct sockaddr_in servaddr, cli;
+	struct sockaddr_storage their_addr;
+    socklen_t sin_size;
+    char s[INET6_ADDRSTRLEN];
 
     x264_focal_input_t* pos_data = ptr;
 
@@ -182,7 +186,7 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                 //     printf("port number %d\n", ntohs(sin.sin_port));
 
                 if (isTCP) {
-                    if ((numbytes = recv(d_sockfd, d_buf, MAXBUFLEN-1)) == -1) {
+                    if ((numbytes = recv(d_sockfd, d_buf, MAXBUFLEN-1, 0)) == -1) {
                         break;
                     }
                 } else {
