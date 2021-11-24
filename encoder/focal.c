@@ -61,16 +61,16 @@ static long double stat_total_count = 1;
 // Hardcoded Dimensions of center points for sphere halves on spherical video
 
 static float lensCenter_right_x = (4575.319 / 6080);
-static float lenseCenter_right_y = (1521.183 / 3040);
+static float lensCenter_right_y = (1521.183 / 3040);
 
 static float lensRadius_right_x = (1430.017 / 6080);
-static float lenseRadius_right_y = (1430.017 / 3040);
+static float lensRadius_right_y = (1430.017 / 3040);
 
 static float lensCenter_left_x = (1530.073 / 6080);
-static float lenseCenter_left_y = (1515.421 / 3040);
+static float lensCenter_left_y = (1515.421 / 3040);
 
 static float lensRadius_left_x = (1425.675 / 6080);
-static float lenseRadius_left_y = (1425.675 / 3040);
+static float lensRadius_left_y = (1425.675 / 3040);
 static float HALF_BOUNDARY = (6080/2);
 
 static float SCALE = 180/186;
