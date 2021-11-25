@@ -147,14 +147,14 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
 		                sin_size = sizeof their_addr;
 		                printf("Waiting for connection...\n");
 		                // accept connection
-    	                dtcp_sockfd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size); 
+    	                dtcp_sockfd = accept(d_sockfd, (struct sockaddr *)&their_addr, &sin_size); 
     	                if (dtcp_sockfd < 0) { 
-                    	printf("server accept failed...%s\n", gai_strerror(errno));
+                    	printf("server accept failed...%s\n", strerror(errno));
                         	continue; 
     	                }
 		                printf("server accepted client\n");
 		                inet_ntop(their_addr.ss_family, x264_get_in_addr((struct sockaddr *)&cli), s, sizeof s);
-		                printf("stream_receive_custom_protocoltransmit_server: accepted connection from %s\n", s);
+		                printf("x264_focal_connect: accepted connection from %s\n", s);
                         close(d_sockfd);
 		                break;
 	                }
@@ -249,7 +249,7 @@ int x264_tcp_connection_helper(char* port) {
 	hints.ai_socktype = SOCK_STREAM; // this enables a TCP connection 
 	hints.ai_flags = AI_PASSIVE;
 	if ((ret = getaddrinfo(NULL, port, &hints, &serverinfo)) != 0) {
-		fprintf(stdout, "getaddrinfo: %s\n", gai_strerror(ret));
+		fprintf(stdout, "%s: port=%s %s\n", __func__, port, gai_strerror(ret));
 		return 1;
 	}
 
