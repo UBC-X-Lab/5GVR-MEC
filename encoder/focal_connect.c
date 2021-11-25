@@ -93,6 +93,12 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
 
             //Open socket for TCP control connection
                 sockfd = x264_tcp_connection_helper(controlPort);
+                if (send(sockfd, "r34\n", 4, 0) == -1)
+                    printf("sendError\n");
+                if (send(sockfd, "p3491\n", 6, 0) == -1)
+                    printf("sendError\n");
+                cStatus = connected_awaiting_data;
+                printf("Focal is running...\n");
 
             //Open socket for UDP data connection
                 memset(&d_hints, 0, sizeof d_hints);
