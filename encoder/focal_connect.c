@@ -112,15 +112,17 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                 // loop through all the results and connect to the first we can
                 for(d_p = d_servinfo; d_p != NULL; d_p = d_p->ai_next) {
                     if ((d_sockfd = socket(d_p->ai_family, d_p->ai_socktype, d_p->ai_protocol)) == -1) {
+                        perror("MADE IT IN HERE THE SOCKET DID NOT START");
                         continue;
                     }
                     // to avoid address already in use error messages and allow binding
-		            if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+		            if (setsockopt(d_sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
 			            perror("setsockopt");
                         wait(1000); //Wait one second and try again
 			            break;
 		            }
                     if(bind(d_sockfd, d_p->ai_addr, d_p->ai_addrlen)){
+                        perror("[Focal connect] bind");
                         close(d_sockfd);
                         continue;
                     }
