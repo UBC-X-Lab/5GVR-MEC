@@ -68,23 +68,38 @@ public class PositionSender : MonoBehaviour
 
     public void connect(System.Object obj) {
         TcpClient client;
-        print("[Position Sender] Reaching out to connect to Server...");
         while(true) {
             try {
                 // This constructor automatically attempts connection for us
                 serverAddr = IPAddress.Parse(ServerAddrAsString);
+                print("[Position Sender] Connecting to " + serverAddr.ToString() + ":" + controlPort);
                 client = new TcpClient(serverAddr.ToString(), controlPort);
-                print("[Position Sender] Connection established with " + serverAddr.ToString());
+                print("[Position Sender] Connection established");
 
                 NetworkStream stream = client.GetStream();
+
+                /* Check to see if the stream is actually working.
+                If this is e.g. a SSH tunnel that fails to connect to the backend, this will crash. */
+                stream.Write(new byte[] { 0 }, 0, 1);
+                stream.Flush();
+                {
+                    byte[] command = new byte[1024];
+                    int size = stream.Read(command, 0, command.Length);
+                    print("[Position Sender] Connection appears live: " + size);
+                }
 
                 mut.WaitOne();
                 // update address for upd connection (could just use serverAddr, but want to reduce refactoring
                 destination = serverAddr;
                 mut.ReleaseMutex();
 
-                timeout = DateTime.Now.AddSeconds(2);
+                Thread.Sleep(500);
+
                 focalTransmit = new Thread(new ParameterizedThreadStart(transmit));
+                focalTransmit.Start();
+
+                timeout = DateTime.Now.AddSeconds(2);
+                
                 while (client.Connected && DateTime.Now < timeout)
                 {
                     while (stream.CanRead && stream.DataAvailable)
@@ -96,11 +111,11 @@ public class PositionSender : MonoBehaviour
                         stream.Read(command, 0, command.Length);
                         handleInput(enc8.GetString(command));
                     }
-                    if (send && !active && !focalTransmit.IsAlive)
-                    {
-                        focalTransmit.Start();
-                        Thread.Yield();
-                    }
+                    //if (send && !active && !focalTransmit.IsAlive)
+                    //{
+                    //focalTransmit.Start();
+                    //Thread.Yield();
+                    //}
                 }
                 // close connection
                 focalTransmit.Abort();
@@ -109,7 +124,9 @@ public class PositionSender : MonoBehaviour
                 print("[Position Sender] Connection timed out.");
                 break;
             } catch (Exception e) {
-                print("[Position Sender] connection was not established \n Retrying ...");
+                print("[Position Sender] connection was not established: " + e);
+                Thread.Sleep(500);
+                print("[Position Sender] retrying");
             }
         }
     }
@@ -120,7 +137,7 @@ public class PositionSender : MonoBehaviour
         active = true;
         mut.ReleaseMutex();
         // cant find an abstract class to use a single object so creating two and then only connet one
-        TcpClient transmitClientTCP = new TcpClient();
+        TcpClient transmitClientTCP = new TcpClient(destination.ToString(), StreamPort);
         UdpClient transmitClientUDP = new UdpClient();
         NetworkStream TCPStream = null;
         
@@ -128,7 +145,6 @@ public class PositionSender : MonoBehaviour
         {
             print("[Position Sender] Initializing data transmission to: " + destination.ToString() + ":" + StreamPort + ".");
             if (isTCP) {
-                transmitClientTCP.Connect(destination, StreamPort);
                 TCPStream= transmitClientTCP.GetStream();
             } else {
                 transmitClientUDP.Connect(destination, StreamPort);
@@ -183,10 +199,10 @@ public class PositionSender : MonoBehaviour
         }
         else if (command.Contains("p"))
         {
-            mut.WaitOne();
-            StreamPort = num;
-            mut.ReleaseMutex();
-            send = true;
+            // mut.WaitOne();
+            // StreamPort = num;
+            // mut.ReleaseMutex();
+            // send = true;
         }
         else
         {
