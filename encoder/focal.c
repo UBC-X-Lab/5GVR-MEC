@@ -249,7 +249,7 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     float temp_x = mb_pos.x / (scalar_r * lenseRadius);
     float temp_y = mb_pos.y / (scalar_r * lenseRadius);
     
-    sphereCoords.z = sign * cosf(scalar_r / SCALE) * (UNITY_PI / 2);
+    sphereCoords.z = sign * cosf(scalar_r * UNITY_PI / (2* SCALE));
     // find h -- note though the real x and y are scalar multiples of h
     // we know the output should be normalized so sqrt(x^2 + y^2 + z^2) = 1 
     // => x^2 + y^ 2 = 1 - z^2. We by the relation of x and y, h^2 = x^2 + y^2, so h = sqrt(1-z^2) 
@@ -257,5 +257,5 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     sphereCoords.x = temp_x * h;
     sphereCoords.y = temp_y * h;
     
-    return sphereCoords;
+    return sphereCoords;  
 }
