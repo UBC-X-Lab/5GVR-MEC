@@ -259,3 +259,11 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     
     return sphereCoords;  
 }
+
+float x264_focal_float2_norm(x264_float2_t vect) {
+    return sqrtf(powf(vect.x, 2) + powf(vect.y, 2));
+}
+
+float x264_focal_float3_norm(x264_float3_t vect) {
+    return sqrtf(powf(vect.x, 2) + powf(vect.y, 2) + powf(vect.z, 2));
+}
