@@ -94,9 +94,9 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
             //Open socket for TCP control connection
                 sockfd = x264_tcp_connection_helper(controlPort);
                 if (send(sockfd, "r34\n", 4, 0) == -1)
-                    printf("sendError\n");
+                    printf("sendError r34\n");
                 if (send(sockfd, "p27871\n", 6, 0) == -1)
-                    printf("sendError\n");
+                    printf("sendError p27871\n");
                 cStatus = connected_awaiting_data;
                 printf("Focal is running...\n");
 
@@ -178,9 +178,9 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
             case connected_send_parameters:
                 resend_parameters = clock() + CLOCKS_PER_SEC;
                 if (send(sockfd, "r34\n", 4, 0) == -1)
-                    printf("sendError\n");
+                    printf("sendError r34\n");
                 if (send(sockfd, "p27871\n", 6, 0) == -1)
-                    printf("sendError\n");
+                    printf("sendError p27871\n");
                 cStatus = connected_awaiting_data;
                 printf("Focal is running...\n");
                 break;
