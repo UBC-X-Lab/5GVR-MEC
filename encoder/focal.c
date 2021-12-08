@@ -224,19 +224,19 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     lenseCenter.x = lensCenter_left_x;
     lenseCenter.y = lensCenter_left_y;
     float lenseRadius;
-    lenseRadius = sqrtf(powf(lensRadius_left_x, 2) + powf(lensRadius_left_y, 2));
+    lenseRadius = x264_float2_norm((x264_float2_t) (lensRadius_left_x, lensRadius_left_y));
     if (mb_pos.x > HALF_BOUNDARY) {
         //right sphere corresponds to positive z
         sign = 1;
         lenseCenter.x = lensCenter_right_x;
         lenseCenter.y = lensCenter_right_y;
-        lenseRadius = sqrtf(powf(lensRadius_right_x, 2) + powf(lensRadius_right_y, 2));
+        lenseRadius = x264_float2_norm((x264_float2_t) (lensRadius_right_x, lensRadius_right_y));
     }
     // calculate distance from center of sphere the macroblock lies on
     x264_float2_t radius;
     radius.x = mb_pos.x - lenseCenter.x;
     radius.y = mb_pos.y - lenseCenter.y;
-    float scalar_r = (sqrtf(powf(radius.x, 2)) + powf(radius.y, 2));
+    float scalar_r = x264_focal_float2_norm(radius);
     x264_float3_t sphereCoords;
     if (scalar_r > lenseRadius) {
         sphereCoords.x = 0;
@@ -266,4 +266,34 @@ float x264_focal_float2_norm(x264_float2_t vect) {
 
 float x264_focal_float3_norm(x264_float3_t vect) {
     return sqrtf(powf(vect.x, 2) + powf(vect.y, 2) + powf(vect.z, 2));
+}
+
+x264_float2_t x264_focal_float2_add(x264_float2_t vect1, x264_float2_t vect2) {
+    x264_float2_t addition;
+    addition.x = vect1.x + vect2.x;
+    addition.y = vect1.y + vect2.y;
+    return addition;
+}
+
+x264_float3_t x264_focal_float3_add(x264_float3_t vect1, x264_float3_t vect2) {
+    x264_float2_t addition;
+    addition.x = vect1.x + vect2.x;
+    addition.y = vect1.y + vect2.y;
+    addition.z = vect1.z + vect2.z;
+    return addition;
+}
+
+x264_float2_t x264_focal_float2_scalar_mult(x264_float2_t vect1, x264_float2_t vect2) {
+    x264_float2_t mul;
+    mul.x = vect.x * scalar;
+    mul.y = vect.y * scalar;
+    return mul;
+}
+
+x264_float3_t x264_focal_float3_scalar_mult(float scalar, x264_float3_t vect) {
+    x264_float2_t mul;
+    mul.x = vect.x * scalar;
+    mul.y = vect.y * scalar;
+    mul.z = vect.z * scalar;
+    return mul;
 }
