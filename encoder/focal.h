@@ -77,10 +77,10 @@ x264_float2_t x264_focal_float2_add(x264_float2_t vect1, x264_float2_t vect2);
 #define x264_focal_float3_add x264_template(focal_float3_add)
 x264_float3_t x264_focal_float3_add(x264_float3_t vect1, x264_float3_t vect2);
 
-#define x264_focal_float2_scalar_mul x264_template(focal_float2_scalar_mult)
+#define x264_focal_float2_scalar_mult x264_template(focal_float2_scalar_mult)
 x264_float2_t x264_focal_float2_scalar_mult(float scalar, x264_float2_t vect); 
 
-#define x264_focal_float3_add x264_template(focal_float3_scalar_mult)
+#define x264_focal_float3_scalar_mult x264_template(focal_float3_scalar_mult)
 x264_float3_t x264_focal_float3_scalar_mult(float scalar, x264_float3_t vect);
 
 #endif
