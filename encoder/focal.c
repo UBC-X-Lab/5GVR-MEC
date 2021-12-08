@@ -233,29 +233,37 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
         lenseRadius = sqrtf(powf(lensRadius_right_x, 2) + powf(lensRadius_right_y, 2));
     }
     // calculate distance from center of sphere the macroblock lies on
-    x264_float2_t radius;
-    radius.x = mb_pos.x - lenseCenter.x;
-    radius.y = mb_pos.y - lenseCenter.y;
-    float scalar_r = x264_focal_float2_norm(radius);
+    x264_float2_t radius = x264_focal_float2_add(mb_pos, x264_focal_float2_scalar_mult(-1, lenseCenter));
+    //radius.x = mb_pos.x - lenseCenter.x;
+    //radius.y = mb_pos.y - lenseCenter.y;
+    
     x264_float3_t sphereCoords;
+
+    // check that the difference, scalar_r from point to center of it's sphere does not exceed lenseRadius
     if (scalar_r > lenseRadius) {
+        // this means the point lies outside of the sphere image, want to quantize with 80
         sphereCoords.x = 0;
         sphereCoords.y = 0;
         sphereCoords.z = 0;
         return sphereCoords;
     }
-    scalar_r = scalar_r/lenseRadius;
-    // lenses_Center+lense_Radius
-    float temp_x = mb_pos.x / (scalar_r * lenseRadius);
-    float temp_y = mb_pos.y / (scalar_r * lenseRadius);
     
+    // normalize the radius
+    float scalar_r = x264_focal_float2_norm(radius); // or possibly we want radius * pi /2 * scale**-1 to be normalized
+    // scalar_r = scalar_r/lenseRadius; // seems redundant not sure if this is necissary
+    
+    // calculate z 
     sphereCoords.z = sign * cosf(scalar_r * UNITY_PI / (2* SCALE));
     // find h -- note though the real x and y are scalar multiples of h
     // we know the output should be normalized so sqrt(x^2 + y^2 + z^2) = 1 
     // => x^2 + y^ 2 = 1 - z^2. We by the relation of x and y, h^2 = x^2 + y^2, so h = sqrt(1-z^2) 
+    
+    // calculate h
     float h = sqrt(1 - pow(sphereCoords.z, 2));
-    sphereCoords.x = temp_x * h;
-    sphereCoords.y = temp_y * h;
+    
+    // calculate the x and y calues for the sphere
+    sphereCoords.x = h * (mb.x - lenseCenter.x) / (lenseRadius * scalar_r)
+    sphereCoords.y = -1 * h * (mb.y - lenseCenter.y) / (lenseRadius * scalar_r)
     
     return sphereCoords;  
 }
