@@ -238,18 +238,16 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     //radius.y = mb_pos.y - lenseCenter.y;
     
     x264_float3_t sphereCoords;
-
+    float scalar_r = x264_focal_float2_norm(radius);
     // check that the difference, scalar_r from point to center of it's sphere does not exceed lenseRadius
-    if (radius > lenseRadius) {
+    if (scalar_r > lenseRadius) {
         // this means the point lies outside of the sphere image, want to quantize with 80
         sphereCoords.x = 0;
         sphereCoords.y = 0;
         sphereCoords.z = 0;
         return sphereCoords;
     }
-    
-    // normalize the radius
-    float scalar_r = x264_focal_float2_norm(radius); // or possibly we want radius * pi /2 * scale**-1 to be normalized
+
     // scalar_r = scalar_r/lenseRadius; // seems redundant not sure if this is necissary
     
     // calculate z 
