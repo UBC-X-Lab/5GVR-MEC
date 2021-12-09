@@ -144,6 +144,7 @@ int x264_focal_reallocate_qp( x264_t *h )
     mb_pos.x = ( (float) h->mb.i_mb_x ) / x_max;
     mb_pos.y = ( (float) h->mb.i_mb_y ) / y_max;
     float dist = x264_focal_abs_distance(mb_pos);
+    printf("distance %f\n", dist);
     //apply qp changes
     int qp;
     if(dist < thresh){        
