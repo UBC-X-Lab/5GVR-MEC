@@ -233,13 +233,13 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     lenseCenter.x = lensCenter_left_x;
     lenseCenter.y = lensCenter_left_y;
     float lenseRadius;
-    lenseRadius = sqrtf(powf(lensRadius_left_x, 2) + powf(lensRadius_left_y, 2));
+    lenseRadius = sqrtf(powf((lensRadius_left_x - lensCenter_left_x), 2) + powf((lensRadius_left_y - lensCenter_left_y), 2));
     if (mb_pos.x > HALF_BOUNDARY) {
         //right sphere corresponds to positive z
         sign = 1;
         lenseCenter.x = lensCenter_right_x;
         lenseCenter.y = lensCenter_right_y;
-        lenseRadius = sqrtf(powf(lensRadius_right_x, 2) + powf(lensRadius_right_y, 2));
+        lenseRadius = sqrtf(powf((lensRadius_right_x - lensCenter_right_x), 2) + powf((lensRadius_right_y - lensCenter_right_y), 2));
     }
     // calculate distance from center of sphere the macroblock lies on
     x264_float2_t radius = x264_focal_float2_add(mb_pos, x264_focal_float2_scalar_mult(-1, lenseCenter));
