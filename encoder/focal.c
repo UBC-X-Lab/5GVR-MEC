@@ -151,6 +151,7 @@ int x264_focal_reallocate_qp( x264_t *h )
         //qp = x264_focal_qp_improve(h, dist);
         stat_total_qp += qp;
         stat_total_count++;
+        print("Quantization Parameter %d\n", qp);
         return qp;
     }
     if(isFocalDisabled) return x264_ratecontrol_mb_qp( h );
@@ -261,7 +262,7 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     
     // calculate the x and y calues for the sphere
     sphereCoords.x = h * (mb_pos.x - lenseCenter.x) / (lenseRadius * scalar_r);
-    sphereCoords.y = -1 * h * (mb_pos.y - lenseCenter.y) / (lenseRadius * scalar_r);
+    sphereCoords.y = h * (mb_pos.y - lenseCenter.y) / (lenseRadius * scalar_r); // may need to by multiplied by a multiple of -1
     
     return sphereCoords;  
 }
