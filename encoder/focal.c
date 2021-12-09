@@ -151,7 +151,7 @@ int x264_focal_reallocate_qp( x264_t *h )
         //qp = x264_focal_qp_improve(h, dist);
         stat_total_qp += qp;
         stat_total_count++;
-        print("Quantization Parameter %d\n", qp);
+        printf("Quantization Parameter %d\n", qp);
         return qp;
     }
     if(isFocalDisabled) return x264_ratecontrol_mb_qp( h );
