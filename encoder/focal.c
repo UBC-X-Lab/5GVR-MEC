@@ -249,7 +249,7 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
         return sphereCoords;
     }
 
-    // scalar_r = scalar_r/lenseRadius; // seems redundant not sure if this is necissary
+    scalar_r = scalar_r/lenseRadius; // seems redundant not sure if this is necissary
     
     // calculate z 
     sphereCoords.z = sign * cosf(scalar_r * UNITY_PI / (2* SCALE));
@@ -262,7 +262,7 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     
     // calculate the x and y calues for the sphere
     sphereCoords.x = h * (mb_pos.x - lenseCenter.x) / (lenseRadius * scalar_r);
-    sphereCoords.y = h * (mb_pos.y - lenseCenter.y) / (lenseRadius * scalar_r); // may need to by multiplied by a multiple of -1
+    sphereCoords.y = -1 * h * (mb_pos.y - lenseCenter.y) / (lenseRadius * scalar_r); // may need to by multiplied by a multiple of -1
     
     return sphereCoords;  
 }
