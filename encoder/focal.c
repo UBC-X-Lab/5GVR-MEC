@@ -281,8 +281,10 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     x264_float2_t lensCenter;
     x264_float2_t lensRadius;
     x264_float2_t normalized_mb_pos;
-    normalized_mb_pos.x = mb_pos.x / 6080;
-    normalized_mb_pos.y = mb_pos.x / 3040;
+    printf("[FOCAL] %f", mb_pos.x);
+    printf("[FOCAL] %f", mb_pos.y);
+    normalized_mb_pos.x = mb_pos.x / 6080.0;
+    normalized_mb_pos.y = mb_pos.x / 3040.0;
     if (mb_pos.x <= HALF_BOUNDARY){
         // left sphere
         sign = -1;
@@ -312,7 +314,7 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
         sphereCoords.x = 0;
         sphereCoords.y = 0;
         sphereCoords.z = 0;
-        printf("[FOCAL] mb_pos is outside of sphere video\n");
+        //printf("[FOCAL] mb_pos is outside of sphere video\n");
         return sphereCoords;
     }else{
         printf("[FOCAL] mb_pos is inside of sphere video\n");
