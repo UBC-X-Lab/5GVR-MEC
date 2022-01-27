@@ -329,7 +329,8 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     
     // calculate the x and y values for the sphere
     sphereCoords.x = sign * h * (mb_pos.x - lensCenter.x) / (radius_mag);
-    sphereCoords.y = -1 * h * (mb_pos.y - lensCenter.y) / (radius_mag); // may need to by multiplied by a multiple of -1
+    // sphereCoords.x = h * (mb_pos.x - lensCenter.x) / (radius_mag);
+    sphereCoords.y = -1 * h * (mb_pos.y - lensCenter.y) / (radius_mag); // may need to be multiplied by a multiple of -1
 
     // float sin_theta = (mb_pos.y - lensCenter.y) / radius_mag;
     // float cos_theta = (mb_pos.x - lensCenter.x) / radius_mag;
