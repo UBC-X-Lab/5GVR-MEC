@@ -60,20 +60,20 @@ static long double stat_total_count = 1;
 
 // Hardcoded Dimensions of center points for sphere halves on spherical video
 
-static float lensCenter_right_x = (4575.319 / 6080);
-static float lensCenter_right_y = (1521.183 / 3040);
+static float lensCenter_right_x = 4575.319 / 6080;
+static float lensCenter_right_y = 1521.183 / 3040;
 
-static float lensRadius_right_x = (1430.017 / 6080);
-static float lensRadius_right_y = (1430.017 / 3040);
+static float lensRadius_right_x = 1430.017 / 6080;
+static float lensRadius_right_y = 1430.017 / 3040;
 
-static float lensCenter_left_x = (1530.073 / 6080);
-static float lensCenter_left_y = (1515.421 / 3040);
+static float lensCenter_left_x = 1530.073 / 6080;
+static float lensCenter_left_y = 1515.421 / 3040;
 
-static float lensRadius_left_x = (1425.675 / 6080);
-static float lensRadius_left_y = (1425.675 / 3040);
-static float HALF_BOUNDARY = (6080/2);
+static float lensRadius_left_x = 1425.675 / 6080;
+static float lensRadius_left_y = 1425.675 / 3040;
+static float HALF_BOUNDARY = 6080 / 2.0;
 
-static float SCALE = 180/186;
+static float SCALE = 180.0 / 186.0;
 
 // returns in-focus qp within valid range
 int x264_focal_qp_improve( x264_t *h, int dist ){
@@ -227,41 +227,100 @@ x264_float3_t x264_focal_getSpherePos( x264_float2_t mb_pos){
 }
 
 // calculate normalized vector that passes through the macroblocks position on sphere in unity endpoint
+// x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
+//     int sign = -1;
+//     x264_float2_t lenseCenter; 
+//     lenseCenter.x = lensCenter_left_x;
+//     lenseCenter.y = lensCenter_left_y;
+//     float lenseRadius;
+//     lenseRadius = sqrtf(powf((lensRadius_left_x - lensCenter_left_x), 2) + powf((lensRadius_left_y - lensCenter_left_y), 2));
+//     if (mb_pos.x > HALF_BOUNDARY) {
+//         //right sphere corresponds to positive z
+//         sign = 1;
+//         lenseCenter.x = lensCenter_right_x;
+//         lenseCenter.y = lensCenter_right_y;
+//         lenseRadius = sqrtf(powf((lensRadius_right_x - lensCenter_right_x), 2) + powf((lensRadius_right_y - lensCenter_right_y), 2));
+//     }
+//     // calculate distance from center of sphere the macroblock lies on
+//     x264_float2_t radius = x264_focal_float2_add(mb_pos, x264_focal_float2_scalar_mult(-1, lenseCenter));
+//     //radius.x = mb_pos.x - lenseCenter.x;
+//     //radius.y = mb_pos.y - lenseCenter.y;
+    
+//     x264_float3_t sphereCoords;
+//     float scalar_r = x264_focal_float2_norm(radius);
+//     scalar_r = scalar_r/lenseRadius; // seems redundant not sure if this is necissary
+//     // check that the difference, scalar_r from point to center of it's sphere does not exceed lenseRadius
+//     if (scalar_r > lenseRadius) {
+//         // this means the point lies outside of the sphere image, want to quantize with 80
+//         sphereCoords.x = 0;
+//         sphereCoords.y = 0;
+//         sphereCoords.z = 0;
+//         printf("[FOCAL] mb_pos is outside of sphere video\n");
+//         return sphereCoords;
+//     }
+
+    
+//     // calculate z 
+//     sphereCoords.z = sign * cosf(scalar_r * UNITY_PI / (2* SCALE));
+//     // find h -- note though the real x and y are scalar multiples of h
+//     // we know the output should be normalized so sqrt(x^2 + y^2 + z^2) = 1 
+//     // => x^2 + y^ 2 = 1 - z^2. We by the relation of x and y, h^2 = x^2 + y^2, so h = sqrt(1-z^2) 
+    
+//     // calculate h
+//     float h = sqrt(1 - pow(sphereCoords.z, 2));
+    
+//     // calculate the x and y calues for the sphere
+//     sphereCoords.x = h * (mb_pos.x - lenseCenter.x) / (lenseRadius * scalar_r);
+//     sphereCoords.y = -1 * h * (mb_pos.y - lenseCenter.y) / (lenseRadius * scalar_r); // may need to by multiplied by a multiple of -1
+    
+//     return sphereCoords;  
+// }
+
 x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
-    int sign = -1;
-    x264_float2_t lenseCenter; 
-    lenseCenter.x = lensCenter_left_x;
-    lenseCenter.y = lensCenter_left_y;
-    float lenseRadius;
-    lenseRadius = sqrtf(powf((lensRadius_left_x - lensCenter_left_x), 2) + powf((lensRadius_left_y - lensCenter_left_y), 2));
-    if (mb_pos.x > HALF_BOUNDARY) {
-        //right sphere corresponds to positive z
+    int sign;
+    x264_float2_t lensCenter;
+    x264_float2_t lensRadius;
+    x264_float2_t normalized_mb_pos;
+    normalized_mb_pos.x = mb_pos.x / 6080;
+    normalized_mb_pos.y = mb_pos.x / 3040;
+    if (mb_pos.x <= HALF_BOUNDARY){
+        // left sphere
+        sign = -1;
+        lensCenter.x = lensCenter_left_x;
+        lensCenter.y = lensCenter_left_y;
+        lensRadius.x = lensRadius_left_x;
+        lensRadius.y = lensRadius_left_y;
+    }else{
+        // right sphere
         sign = 1;
-        lenseCenter.x = lensCenter_right_x;
-        lenseCenter.y = lensCenter_right_y;
-        lenseRadius = sqrtf(powf((lensRadius_right_x - lensCenter_right_x), 2) + powf((lensRadius_right_y - lensCenter_right_y), 2));
+        lensCenter.x = lensCenter_right_x;
+        lensCenter.y = lensCenter_right_y;
+        lensRadius.x = lensRadius_right_x;
+        lensRadius.y = lensRadius_right_y;
     }
+
     // calculate distance from center of sphere the macroblock lies on
-    x264_float2_t radius = x264_focal_float2_add(mb_pos, x264_focal_float2_scalar_mult(-1, lenseCenter));
-    //radius.x = mb_pos.x - lenseCenter.x;
-    //radius.y = mb_pos.y - lenseCenter.y;
+    x264_float2_t radius = x264_focal_float2_add(normalized_mb_pos, x264_focal_float2_scalar_mult(-1, lensCenter));
+    float radius_mag = x264_focal_float2_norm(radius);
+    float lensRadius_mag = x264_focal_float2_norm(lensRadius);
     
     x264_float3_t sphereCoords;
-    float scalar_r = x264_focal_float2_norm(radius);
-    scalar_r = scalar_r/lenseRadius; // seems redundant not sure if this is necissary
+    // scalar_r = scalar_r/lenseRadius; // seems redundant not sure if this is necissary
     // check that the difference, scalar_r from point to center of it's sphere does not exceed lenseRadius
-    if (scalar_r > lenseRadius) {
+    if (radius_mag > lensRadius_mag) {
         // this means the point lies outside of the sphere image, want to quantize with 80
         sphereCoords.x = 0;
         sphereCoords.y = 0;
         sphereCoords.z = 0;
         printf("[FOCAL] mb_pos is outside of sphere video\n");
         return sphereCoords;
+    }else{
+        printf("[FOCAL] mb_pos is inside of sphere video\n");
     }
 
     
     // calculate z 
-    sphereCoords.z = sign * cosf(scalar_r * UNITY_PI / (2* SCALE));
+    sphereCoords.z = sign * cosf(radius_mag * UNITY_PI / (2* SCALE));
     // find h -- note though the real x and y are scalar multiples of h
     // we know the output should be normalized so sqrt(x^2 + y^2 + z^2) = 1 
     // => x^2 + y^ 2 = 1 - z^2. We by the relation of x and y, h^2 = x^2 + y^2, so h = sqrt(1-z^2) 
@@ -270,8 +329,8 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     float h = sqrt(1 - pow(sphereCoords.z, 2));
     
     // calculate the x and y calues for the sphere
-    sphereCoords.x = h * (mb_pos.x - lenseCenter.x) / (lenseRadius * scalar_r);
-    sphereCoords.y = -1 * h * (mb_pos.y - lenseCenter.y) / (lenseRadius * scalar_r); // may need to by multiplied by a multiple of -1
+    sphereCoords.x = h * (mb_pos.x - lensCenter.x) / (lensRadius_mag * radius_mag);
+    sphereCoords.y = -1 * h * (mb_pos.y - lensCenter.y) / (lensRadius_mag * radius_mag); // may need to by multiplied by a multiple of -1
     
     return sphereCoords;  
 }
