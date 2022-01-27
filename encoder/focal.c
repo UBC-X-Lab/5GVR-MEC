@@ -314,8 +314,6 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
         sphereCoords.z = 0;
         //printf("[FOCAL] mb_pos is outside of sphere video\n");
         return sphereCoords;
-    }else{
-        printf("[FOCAL] mb_pos is inside of sphere video\n");
     }
 
     
