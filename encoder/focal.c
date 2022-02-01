@@ -353,8 +353,9 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
         sphereCoords.y = tan_theta * sphereCoords.x;
 
         if (mb_pos.x - lensCenter.x < 0){
-            sphereCoords.x = -1 * sign * sphereCoords.x;
+            sphereCoords.x = -1 * sphereCoords.x;
         }
+        sphereCoords.x = sphereCoords.x * sign;
         if (mb_pos.y - lensCenter.y < 0){
             sphereCoords.y = -1 * sphereCoords.y;
         }
