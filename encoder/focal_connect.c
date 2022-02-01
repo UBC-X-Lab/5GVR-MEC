@@ -177,16 +177,17 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                 break;
             case connected_send_parameters:
                 resend_parameters = clock() + CLOCKS_PER_SEC;
-                if (send(sockfd, "r34\n", 4, 0) == -1)
-                    printf("sendError r34-2\n");
-                if (send(sockfd, "p27871\n", 7, 0) == -1)
-                    printf("sendError p27871-2\n");
+                printf("connected_send_params\n");
+                // if (send(sockfd, "r34\n", 4, 0) == -1)
+                //     printf("sendError r34-2\n");
+                // if (send(sockfd, "p27871\n", 7, 0) == -1)
+                //     printf("sendError p27871-2\n");
                 cStatus = connected_awaiting_data;
                 printf("Focal is running...\n");
                 break;
             case connected_awaiting_data:
                 if(clock() >= resend_parameters){
-                    printf("connected_awaiting_data timeout");
+                    printf("connected_awaiting_data timeout\n");
                     cStatus = connected_send_parameters;
                 }
                 // struct sockaddr_in sin;
