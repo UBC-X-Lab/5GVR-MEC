@@ -324,23 +324,27 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     // we know the output should be normalized so sqrt(x^2 + y^2 + z^2) = 1 
     // => x^2 + y^ 2 = 1 - z^2. We by the relation of x and y, h^2 = x^2 + y^2, so h = sqrt(1-z^2) 
     
-    // calculate h
-    float h = sqrt(1 - pow(sphereCoords.z, 2));
+    // calculate h = sqrt(1 - z^2)
+    // float h = sqrt(1 - pow(sphereCoords.z, 2));
     
-    // calculate the x and y values for the sphere
-    sphereCoords.x = sign * h * (mb_pos.x - lensCenter.x) / (radius_mag);
-    // sphereCoords.x = h * (mb_pos.x - lensCenter.x) / (radius_mag);
-    sphereCoords.y = -1 * h * (mb_pos.y - lensCenter.y) / (radius_mag); // may need to be multiplied by a multiple of -1
+    // // calculate the x and y values for the sphere
+    // sphereCoords.x = sign * h * (mb_pos.x - lensCenter.x) / (radius_mag);
+    // // sphereCoords.x = h * (mb_pos.x - lensCenter.x) / (radius_mag);
+    // sphereCoords.y = -1 * h * (mb_pos.y - lensCenter.y) / (radius_mag); // may need to be multiplied by a multiple of -1
 
-    // float sin_theta = (mb_pos.y - lensCenter.y) / radius_mag;
-    // float cos_theta = (mb_pos.x - lensCenter.x) / radius_mag;
-    // if (mb_pos.x - lensCenter.x < 0){
-    //     sphereCoords.x = -1 * sqrt(powf(cos_theta, 2) - powf(sphereCoords.z, 2));
-    // }else{
-    //     sphereCoords.x = sqrt(powf(cos_theta, 2) - powf(sphereCoords.z, 2));
-    // }
-    // sphereCoords.y = sin_theta;
-    
+    float tan_theta = abs((mb_pos.y - lenCenter.y) / (mb_pos.x - lenCenter.x)); // y'/x' what if y or x == 0?
+    float h = sqrt(1 - pow(sphereCoords.z, 2)); // sqrt(1 - z^2)
+
+    sphereCoords.x = sign * h / sqrt(1 + pow(tan_theta, 2));
+    sphereCoords.y = tan_theta * sphereCoords.x;
+
+    if (mb_pos.x - lenCenter.x < 0){
+        sphereCoords.x = -1 * sphereCoords.x;
+    }
+    if (mb_pos.y - lenCenter.y < 0){
+        sphereCoords.y = -1 * sphereCoords.y;
+    }
+
     return sphereCoords;  
 }
 
