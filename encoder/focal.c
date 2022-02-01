@@ -333,13 +333,14 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     // sphereCoords.y = -1 * h * (mb_pos.y - lensCenter.y) / (radius_mag); // may need to be multiplied by a multiple of -1
 
     float h = sqrt(1 - pow(sphereCoords.z, 2)); // sqrt(1 - z^2)
-    if ((mb_pos.y - lensCenter.y) == 0){ // pixels are along the x axis
-        sphereCoords.y = 0;
-        sphereCoords.x = sign * h;
-        if (mb_pos.x - lensCenter.x < 0){
-            sphereCoords.x = -1 * sphereCoords.x;
-        }
-    }else if ((mb_pos.x - lensCenter.x) == 0){ // pixels are along the y axis
+    // if ((mb_pos.y - lensCenter.y) == 0){ // pixels are along the x axis
+    //     sphereCoords.y = 0;
+    //     sphereCoords.x = sign * h;
+    //     if (mb_pos.x - lensCenter.x < 0){
+    //         sphereCoords.x = -1 * sphereCoords.x;
+    //     }
+    // }else 
+    if ((mb_pos.x - lensCenter.x) == 0){ // pixels are along the y axis
         sphereCoords.x = 0;
         sphereCoords.y = h;
         if (mb_pos.y - lensCenter.y < 0){
