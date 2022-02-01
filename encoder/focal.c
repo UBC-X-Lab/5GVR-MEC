@@ -332,19 +332,32 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     // // sphereCoords.x = h * (mb_pos.x - lensCenter.x) / (radius_mag);
     // sphereCoords.y = -1 * h * (mb_pos.y - lensCenter.y) / (radius_mag); // may need to be multiplied by a multiple of -1
 
-    float tan_theta = abs((mb_pos.y - lensCenter.y) / (mb_pos.x - lensCenter.x)); // y'/x' what if y or x == 0?
     float h = sqrt(1 - pow(sphereCoords.z, 2)); // sqrt(1 - z^2)
+    if ((mb_pos.y - lensCenter.y) == 0){ // pixels are along the x axis
+        sphereCoords.y = 0;
+        sphereCoords.x = sign * h;
+        if (mb_pos.x - lensCenter.x < 0){
+            sphereCoords.x = -1 * sphereCoords.x;
+        }
+    }else if ((mb_pos.x - lensCenter.x) == 0){ // pixels are along the y axis
+        sphereCoords.x = 0;
+        sphereCoords.y = h;
+        if (mb_pos.y - lensCenter.y < 0){
+            sphereCoords.y = -1 * sphereCoords.y;
+        }
+    }else{
+        float tan_theta = abs((mb_pos.y - lensCenter.y) / (mb_pos.x - lensCenter.x)); // y'/x' what if y or x == 0?
 
-    sphereCoords.x = sign * h / sqrt(1 + pow(tan_theta, 2));
-    sphereCoords.y = tan_theta * sphereCoords.x;
+        sphereCoords.x = h / sqrt(1 + pow(tan_theta, 2));
+        sphereCoords.y = tan_theta * sphereCoords.x;
 
-    if (mb_pos.x - lensCenter.x < 0){
-        sphereCoords.x = -1 * sphereCoords.x;
+        if (mb_pos.x - lensCenter.x < 0){
+            sphereCoords.x = -1 * sign * sphereCoords.x;
+        }
+        if (mb_pos.y - lensCenter.y < 0){
+            sphereCoords.y = -1 * sphereCoords.y;
+        }
     }
-    if (mb_pos.y - lensCenter.y < 0){
-        sphereCoords.y = -1 * sphereCoords.y;
-    }
-
     return sphereCoords;  
 }
 
