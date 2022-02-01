@@ -179,9 +179,9 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                 resend_parameters = clock() + CLOCKS_PER_SEC;
                 // printf("connected_send_params\n");
                 if (send(sockfd, "r34\n", 4, 0) == -1)
-                    printf("sendError r34-2\n");
+                    printf("sendError r34-2: %s\n", strerror(errno));
                 if (send(sockfd, "p27871\n", 7, 0) == -1)
-                    printf("sendError p27871-2\n");
+                    printf("sendError p27871-2: %s\n", strerror(errno));
                 cStatus = connected_awaiting_data;
                 printf("Focal is running...\n");
                 break;
