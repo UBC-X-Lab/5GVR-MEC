@@ -161,16 +161,16 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
 		                printf("server accepted client\n");
 		                inet_ntop(their_addr.ss_family, x264_get_in_addr((struct sockaddr *)&cli), s, sizeof s);
 		                printf("x264_focal_connect: accepted connection from %s\n", s);
-                        close(d_sockfd);
+                        // close(d_sockfd);
 		                break;
 	                }
                 }
 
                 d_sockfd = dtcp_sockfd;
 
-                if(fcntl(d_sockfd, F_SETFL, O_NONBLOCK) == -1){
-                    printf("Data socket could not be set to non-blocking");
-                }
+                // if(fcntl(d_sockfd, F_SETFL, O_NONBLOCK) == -1){
+                //     printf("Data socket could not be set to non-blocking");
+                // }
                 freeaddrinfo(d_servinfo); // all done with this structure
 
                 cStatus = connected_send_parameters;
@@ -180,8 +180,9 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                 // printf("connected_send_params\n");
                 if (send(sockfd, "r34\n", 4, 0) == -1)
                     printf("sendError r34-2: %s\n", strerror(errno));
-                if (send(sockfd, "p27871\n", 7, 0) == -1)
+                if (send(sockfd, "p27871\n", 7, 0) == -1){
                     printf("sendError p27871-2: %s\n", strerror(errno));
+                }
                 cStatus = connected_awaiting_data;
                 printf("Focal is running...\n");
                 break;
@@ -198,7 +199,7 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                 //     printf("port number %d\n", ntohs(sin.sin_port));
 
                 if (isTCP) {
-                    if ((numbytes = recv(d_sockfd, d_buf, MAXBUFLEN-1, 0)) == -1) {
+                    if ((numbytes = recv(d_sockfd, d_buf, 12, MSG_WAITALL)) == -1) {
                         break;
                     }
                 } else {
@@ -207,7 +208,7 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                     }
                 }
                 if(numbytes != 12){
-                    printf("Error in focal_connect: Received incorrect number of bytes\n");
+                    printf("Error in focal_connect: Received incorrect number of bytes: %d %s\n", numbytes, strerror(errno));
                 }else{
                     float* xp = (float*) &d_buf[0];
                     float* yp = (float*) &d_buf[4];
