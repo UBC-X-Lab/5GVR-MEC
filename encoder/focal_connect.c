@@ -186,7 +186,7 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                 break;
             case connected_awaiting_data:
                 if(clock() >= resend_parameters){
-                    printf("connected_awaiting_data timeout")
+                    printf("connected_awaiting_data timeout");
                     cStatus = connected_send_parameters;
                 }
                 // struct sockaddr_in sin;
