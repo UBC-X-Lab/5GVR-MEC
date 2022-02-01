@@ -144,7 +144,7 @@ int x264_focal_reallocate_qp( x264_t *h )
     mb_pos.x = ( (float) h->mb.i_mb_x ) / x_max;
     mb_pos.y = ( (float) h->mb.i_mb_y ) / y_max;
     float dist = x264_focal_abs_distance(mb_pos);
-    printf("distance %f\n", dist);
+    // printf("distance %f\n", dist);
     //apply qp changes
     int qp;
     if(dist < thresh){        
@@ -152,7 +152,7 @@ int x264_focal_reallocate_qp( x264_t *h )
         //qp = x264_focal_qp_improve(h, dist);
         stat_total_qp += qp;
         stat_total_count++;
-        printf("Quantization Parameter %d\n", qp);
+        // printf("Quantization Parameter %d\n", qp);
         return qp;
     }
     if(isFocalDisabled) return x264_ratecontrol_mb_qp( h );
