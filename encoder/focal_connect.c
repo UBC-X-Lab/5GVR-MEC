@@ -171,10 +171,10 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                     d_sockfd = dtcp_sockfd;
                 }
 
-
-                // if(fcntl(d_sockfd, F_SETFL, O_NONBLOCK) == -1){
-                //     printf("Data socket could not be set to non-blocking");
-                // }
+                // we don't like this but we hope this solves the problem
+                if(fcntl(d_sockfd, F_SETFL, O_NONBLOCK) == -1){
+                    printf("Data socket could not be set to non-blocking");
+                }
                 freeaddrinfo(d_servinfo); // all done with this structure
 
                 cStatus = connected_send_parameters;
