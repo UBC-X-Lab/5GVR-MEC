@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 
 
 #define MAXBUFLEN 188
@@ -44,6 +45,9 @@
 enum connection_status {disconnected, connected_send_parameters, connected_awaiting_data};
 
 void *x264_focal_connect(x264_focal_input_t* ptr){
+    /* do not crash on SIGPIPE */
+    signal(SIGPIPE, SIG_IGN);
+
     //Init
     char* host = "0.0.0.0"; //The IP address to connect to
     char* controlPort = "27870"; // the port connected to for TCP "control" connection
