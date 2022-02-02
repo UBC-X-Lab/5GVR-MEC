@@ -164,9 +164,9 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                         // close(d_sockfd);
 		                break;
 	                }
+                    d_sockfd = dtcp_sockfd;
                 }
 
-                d_sockfd = dtcp_sockfd;
 
                 // if(fcntl(d_sockfd, F_SETFL, O_NONBLOCK) == -1){
                 //     printf("Data socket could not be set to non-blocking");
