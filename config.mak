@@ -7,7 +7,7 @@ includedir=${prefix}/include
 SYS_ARCH=X86_64
 SYS=LINUX
 CC=gcc
-CFLAGS=-Wno-maybe-uninitialized -Wshadow -O3 -ffast-math -m64  -Wall -I. -I$(SRCPATH) -std=gnu99 -D_GNU_SOURCE   -fPIC -fomit-frame-pointer -fno-tree-vectorize -fvisibility=hidden
+CFLAGS=-Wno-maybe-uninitialized -Wshadow -O3 -ffast-math -m64  -Wall -I. -I$(SRCPATH) -std=gnu99 -D_GNU_SOURCE -mpreferred-stack-boundary=6  -I/usr/include/x86_64-linux-gnu  -I/usr/include/x86_64-linux-gnu -fPIC -fomit-frame-pointer -fno-tree-vectorize -fvisibility=hidden
 CFLAGSSO=
 CFLAGSCLI=
 COMPILER=GNU
@@ -16,7 +16,7 @@ DEPMM=-MM -g0
 DEPMT=-MT
 LD=gcc -o 
 LDFLAGS=-m64  -lm -lpthread -ldl
-LDFLAGSCLI=-ldl -lavformat -lavcodec -lswresample -lavutil -lbz2 -lz -lpthread -lswscale -lavutil 
+LDFLAGSCLI=-ldl  -lavformat -lavcodec -lavutil  -lswscale -lavutil 
 LIBX264=libx264.a
 CLI_LIBX264=$(LIBX264)
 AR=gcc-ar rc 
@@ -24,7 +24,7 @@ RANLIB=gcc-ranlib
 STRIP=strip
 INSTALL=install
 AS=nasm
-ASFLAGS= -I. -I$(SRCPATH) -DARCH_X86_64=1 -I$(SRCPATH)/common/x86/ -f elf64 -DSTACK_ALIGNMENT=16 -DPIC
+ASFLAGS= -I. -I$(SRCPATH) -DARCH_X86_64=1 -I$(SRCPATH)/common/x86/ -f elf64 -DSTACK_ALIGNMENT=64 -DPIC
 RC=
 RCFLAGS=
 EXE=
