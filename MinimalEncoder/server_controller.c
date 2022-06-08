@@ -88,6 +88,12 @@ int main(int argc, char **argv)
         sched_yield();
     }
 
+    // put thread into sleep while waiting for connection
+    // pthread_mutex_lock(&encode_transmit_pkt_q->mutex);
+    // while (!encode_transmit_pkt_q->ready)
+    //     pthread_cond_wait(&encode_transmit_pkt_q->avail, &encode_transmit_pkt_q->mutex);
+    // pthread_mutex_unlock(&encode_transmit_pkt_q->mutex);
+
     /* get AVFormatContext for decode thread and receive thread - NOTE it should only be open for one thread at a time NOT THREAD SAFE*/
     av_register_all();
     avcodec_register_all();
