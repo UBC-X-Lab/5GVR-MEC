@@ -1,7 +1,7 @@
 SRCPATH=.
-prefix=/root/ffmpeg_build
+prefix=/home/xincheng/ffmpeg_build
 exec_prefix=${prefix}
-bindir=/root/bin
+bindir=/home/xincheng/bin
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
 SYS_ARCH=X86_64

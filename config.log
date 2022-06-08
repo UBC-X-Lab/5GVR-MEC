@@ -21,7 +21,7 @@ int main (void) {  return 0; }
 checking for -Werror=attributes... yes
 checking for -Werror=ignored-attributes... yes
 x264 configure script
-Command line options: "--prefix=/root/ffmpeg_build" "--bindir=/root/bin" "--enable-static" "--enable-pic"
+Command line options: "--prefix=/home/xincheng/ffmpeg_build" "--bindir=/home/xincheng/bin" "--enable-static" "--enable-pic"
 
 checking whether gcc works... yes
 checking whether gcc supports for( int i = 0; i < 9; i++ ); with -std=gnu99... yes
