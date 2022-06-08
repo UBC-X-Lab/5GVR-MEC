@@ -5,6 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <sys/types.h>
 
 #include <libavcodec/avcodec.h>
 #include <libavutil/opt.h>
@@ -53,6 +54,10 @@ void packet_finalizer(void* pkt_pntr) {
 
 int main(int argc, char **argv)
 {
+    // get pid for testing purpose
+    pid_t pid = getpid();
+    printf("Running on pid: %d\n", pid);
+
     int bitrate;
     int ret;
     size_t stacksize;
@@ -93,6 +98,8 @@ int main(int argc, char **argv)
     while (!encode_transmit_pkt_q->ready)
         pthread_cond_wait(&encode_transmit_pkt_q->avail, &encode_transmit_pkt_q->mutex);
     pthread_mutex_unlock(&encode_transmit_pkt_q->mutex);
+
+    printf("woke up!");
 
     /* get AVFormatContext for decode thread and receive thread - NOTE it should only be open for one thread at a time NOT THREAD SAFE*/
     av_register_all();

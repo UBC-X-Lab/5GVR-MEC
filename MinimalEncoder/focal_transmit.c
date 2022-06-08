@@ -121,26 +121,24 @@ void *transmit_connect(void *pkt_queue)
 	printf("Server listening...\n");
 	void* get_in_addr(struct sockaddr *sa);
 
-	while(1) {
-		sin_size = sizeof their_addr;
-		printf("Waiting for connection...\n");
-		// accept connection
-    	connfd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size); 
-    	if (connfd < 0) { 
-        	printf("server accept failed...%s\n", gai_strerror(errno));
-        	continue; 
-    	}else{
-			printf("server accepted client\n");
-			printf("transmit_server: accepted connection from %s\n", s);
-			pthread_mutex_lock(&pkt_q->mutex);
-			tsock = connfd;
-			// signal ready for encoder
-			inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&cli), s, sizeof s);
-			q_ready(pkt_q);
-			pthread_cond_signal(&pkt_q->avail);
-			pthread_mutex_unlock(&pkt_q->mutex);
-			break;
-		}
+	/* Waiting for connection */
+	sin_size = sizeof their_addr;
+	printf("Waiting for connection...\n");
+	// accept connection
+	connfd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size); 
+	if (connfd < 0) { 
+		printf("server accept failed...%s\n", gai_strerror(errno));
+		exit(1); 
+	}else{
+		pthread_mutex_lock(&pkt_q->mutex);
+		tsock = connfd;
+		// signal ready for encoder
+		inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&cli), s, sizeof s);
+		pkt_q->ready = true; // the q_ready call cannot be used here because the lock is already acquired
+		pthread_cond_signal(&pkt_q->avail); // connected, ask main thread to wake up!
+		pthread_mutex_unlock(&pkt_q->mutex);
+		printf("server accepted client\n");
+		printf("transmit_server: accepted connection from %s\n", s);
 	}
 
 	//enter transmit loop
