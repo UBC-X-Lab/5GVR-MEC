@@ -129,17 +129,19 @@ void *transmit_connect(void *pkt_queue)
     	if (connfd < 0) { 
         	printf("server accept failed...%s\n", gai_strerror(errno));
         	continue; 
-    	}
-		printf("server accepted client\n");
-		inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&cli), s, sizeof s);
-		printf("transmit_server: accepted connection from %s\n", s);
-		break;
-
+    	}else{
+			pthread_mutex_lock(&pkt_q->mutex);
+			tsock = connfd;
+			// signal ready for encoder
+			q_ready(pkt_q);
+			pthread_cond_signal(&pkt_q->avail);
+			inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&cli), s, sizeof s);
+			pthread_mutex_unlock(&pkt_q->mutex);
+			printf("server accepted client\n");
+			printf("transmit_server: accepted connection from %s\n", s);
+			break;
+		}
 	}
-	
-	tsock = connfd;
-	// signal ready for encoder
-	q_ready(pkt_queue);
 
 	//enter transmit loop
 	transmit();
