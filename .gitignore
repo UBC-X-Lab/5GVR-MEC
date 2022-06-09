@@ -3,5 +3,7 @@
 *.o
 */*.o
 
+MinimalEncoder/FocalEncoder
+
 # Visual Studio cache directory
 .vs/
