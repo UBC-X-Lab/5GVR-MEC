@@ -143,12 +143,14 @@ void setup_decoder(l_queue* queue_decode_pkt_q, l_queue* queue_decode_frame_q, A
     }
     //printf("DECODE: successfully returned from context creation\n");
     //printf("DECODE: closing format_context needed to set up avcontext. No longer needed close/free so it may be used for receive thread\n");
-    
+
+    pthread_mutex_lock(&decode_pkt_q->mutex);
     /* when doing independent testing needs close input here, when running program in parallel requires q_ready signal to let receiver know it 
     is safe to use the format context <-------------------------------------                */
     // avformat_close_input(&fmt_ctx); // this is fine because pointer in main was set to null, so no risk of dangling pointer
-    q_ready(decode_pkt_q);
-    // printf("DECODE: returned from format close\n");
+    decode_pkt_q->ready = true;
+    pthread_cond_signal(&decode_pkt_q->avail);
+    pthread_mutex_unlock(&decode_pkt_q->mutex);
 
     run_decoder();
 }

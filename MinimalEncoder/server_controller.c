@@ -137,9 +137,15 @@ int main(int argc, char **argv)
     }
 
     /* again we spin while decode finishes its setup with the avformat, we do not want the format to be open and in use in two different locations at once */
-    while(!receive_decode_pkt_q->ready) {
-        sched_yield();
-    }
+    // while(!receive_decode_pkt_q->ready) {
+    //     sched_yield();
+    // }
+
+    // put thread into sleep while waiting for avformat setup
+    pthread_mutex_lock(&receive_decode_pkt_q->mutex);
+    while (!receive_decode_pkt_q->ready)
+        pthread_cond_wait(&receive_decode_pkt_q->avail, &receive_decode_pkt_q->mutex);
+    pthread_mutex_unlock(&receive_decode_pkt_q->mutex);
 
     /* initialize receive thread */
     r_input* r_in = malloc(sizeof(r_input));
