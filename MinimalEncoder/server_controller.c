@@ -54,6 +54,12 @@ void packet_finalizer(void* pkt_pntr) {
 
 int main(int argc, char **argv)
 {
+    // customizable receiver port
+    char* recv_port = "27872";
+    
+    // customizable camera port (for dual mode)
+    char* camera_port = "27873"; // set default to be 27873, could also be 27874 for the back side of the camera
+
     // get pid for testing purpose
     pid_t pid = getpid();
     printf("Running on pid: %d\n", pid);
@@ -63,13 +69,17 @@ int main(int argc, char **argv)
     size_t stacksize;
 
     /* set variables from arguments passed to main */
-    if((argc != 3) && (argc != 2)){
-        printf("invalid number of arguments. please provide 1 integer for bitrate\n& a different url if you wish to change the stream\n");
+    if((argc != 2) && (argc != 4) && (argc != 5)){
+        printf("invalid number of arguments. please provide 1 integer for bitrate\n& a different url if you wish to change the stream\nports this server will listen to");
         exit(1);
     }
     printf("Encoding with bitrate: %d\n", atoi(argv[1])); //TODO turn this dynamic
-    if (argc == 3) {
-        strcpy(SRC_STREAM, argv[2]);
+    if (argc >= 4) {
+        recv_port = argv[2];
+        camera_port = argv[3];
+        if (argc == 5){
+            SRC_STREAM = argv[4];
+        }
     }
     bitrate = atoi(argv[1]);
 
@@ -77,6 +87,8 @@ int main(int argc, char **argv)
     receive_decode_pkt_q = q_queue_alloc();
     decode_encode_frame_q = q_queue_alloc();
     encode_transmit_pkt_q = q_queue_alloc();
+
+    encode_transmit_pkt_q->PORT = recv_port;
 
     if (pthread_create(&transmit_thread, NULL, transmit_connect, encode_transmit_pkt_q))
     {
@@ -99,7 +111,7 @@ int main(int argc, char **argv)
         pthread_cond_wait(&encode_transmit_pkt_q->avail, &encode_transmit_pkt_q->mutex);
     pthread_mutex_unlock(&encode_transmit_pkt_q->mutex);
 
-    printf("woke up!");
+    // printf("woke up!");
 
     /* get AVFormatContext for decode thread and receive thread - NOTE it should only be open for one thread at a time NOT THREAD SAFE*/
     av_register_all();
@@ -149,6 +161,7 @@ int main(int argc, char **argv)
 
     /* initialize receive thread */
     r_input* r_in = malloc(sizeof(r_input));
+    r_in->PORT = camera_port;
     r_in->pkt_q = receive_decode_pkt_q;
     r_in->f_ctx = g_avFormatContext;
     g_avFormatContext = NULL;

@@ -30,11 +30,11 @@
 #include "lockedQueue/locked_queue.h"
 
 #define MAX 80
-#define PORT "27873"
 // #define ADDRESS "192.168.1.60"
 #define SA struct sockaddr
 
 l_queue* pkt_q = NULL;
+char* PORT;
 
 static char* SRC_STREAM = NULL;
 AVFormatContext* format_context = NULL;
@@ -47,6 +47,7 @@ void* handle_input_to_startup_receiver(void* arg_struct) {
     r_input* r_in = (r_input*) arg_struct;
     l_queue* queue_pkt_q = r_in->pkt_q;
     AVFormatContext* context = r_in->f_ctx;
+	PORT = r_in->PORT;
     free(r_in);
     setup_receiver(queue_pkt_q, context);
 } 
@@ -120,21 +121,17 @@ void setup_receiver(l_queue* queue_pkt_q, AVFormatContext* ctx) {
 	printf("Server listening...\n");
 	void* get_in_addr(struct sockaddr *sa);
 
-	while(1) {
-		sin_size = sizeof their_addr;
-		printf("Waiting for connection...\n");
-		// accept connection
-    	connfd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size); 
-    	if (connfd < 0) { 
-        	printf("server accept failed...%s\n", gai_strerror(errno));
-        	continue; 
-    	}
-		printf("server accepted client\n");
-		inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&cli), s, sizeof s);
-		printf("stream_receive_custom_protocoltransmit_server: accepted connection from %s\n", s);
-		break;
-
+	sin_size = sizeof their_addr;
+	printf("Waiting for connection at port %s\n", PORT);
+	// accept connection
+	connfd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size); 
+	if (connfd < 0) { 
+		printf("server accept failed...%s\n", gai_strerror(errno));
+		exit(1);
 	}
+	printf("server accepted client\n");
+	inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&cli), s, sizeof s);
+	printf("stream_receive_custom_protocoltransmit_server: accepted connection from %s\n", s);
 	
 	tsock = connfd;
 	// signal ready

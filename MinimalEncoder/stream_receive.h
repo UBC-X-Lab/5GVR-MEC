@@ -8,6 +8,7 @@
 #include "lockedQueue/locked_queue.h"
 
 typedef struct receive_input {
+    char* PORT;
     l_queue* pkt_q;
     AVFormatContext* f_ctx;
 } r_input;

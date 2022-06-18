@@ -13,7 +13,8 @@
 #include <string.h>
 #include <errno.h>
 #define MAX 80
-#define PORT "27872"
+
+char* PORT;
 
 static l_queue* pkt_q;
 static int tsock;
@@ -56,6 +57,9 @@ void transmit() {
 void *transmit_connect(void *pkt_queue)
 {
 	pkt_q = (l_queue*) pkt_queue;
+	PORT = pkt_q->PORT;
+	printf("listening at port %s for receiver\n", PORT);
+
 	int yes = 1;// for setsockopt() SO_REUSEADDR, below
 	int ret;
 	

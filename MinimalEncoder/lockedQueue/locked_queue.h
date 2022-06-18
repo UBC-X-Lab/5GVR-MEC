@@ -20,6 +20,7 @@ typedef struct locked_queue {
     node* head;
     node* tail;
     int size;
+    char* PORT;
     struct timespec ts;
     struct timeval tv;
 } l_queue;
