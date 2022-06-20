@@ -2,6 +2,13 @@
 *.mp4
 *.o
 */*.o
+config.h
+config.log
+config.mak
+libx264.a
+x264
+x264.pc
+x264_config.h
 
 MinimalEncoder/FocalEncoder
 
