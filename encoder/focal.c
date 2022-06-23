@@ -111,9 +111,9 @@ int x264_focal_reallocate_qp( x264_t *h )
                 printf("focal_connect: failed creating mutex\n");
             }
             input_data.status = uninitialized;
-            input_data.x = 0;
+            input_data.x = 0.2;
             input_data.y = 0;
-            input_data.z = 0;
+            input_data.z = -1;
             if(x264_pthread_create(&connect_thread,NULL,x264_focal_connect,&input_data)){
                 printf("Focal failed to create thread for focal_connect\n");
             }
@@ -138,6 +138,7 @@ int x264_focal_reallocate_qp( x264_t *h )
         if(isFocalDisabled)printf("Focal is Disabled!\n");
         printf("currqp %d, avgqp = %Lf. Sample size = %Lf\n", x264_ratecontrol_mb_qp( h ) ,(stat_total_qp / stat_total_count), stat_total_count);
         printf("x = %f, y = %f, z = %f\n",focal_point.x,focal_point.y,focal_point.z);
+        printf("x_max is %f, y_max is %f\n", (float) h->mb.i_mb_width, (float) h->mb.i_mb_height);
     }
     //calc distance from current mb to focal point
     x264_float2_t mb_pos;
