@@ -40,7 +40,7 @@ static x264_pthread_t connect_thread;
 static x264_focal_input_t input_data = {};
 
 // SIN( FOV / 4 ) = thresh / 2
-static const float thresh = 1.2; //2 = 360degree, sqrt 2 = 180degree, 1 = 120degree, quest is 90 horizontal
+static const float thresh = 0.52; //2 = 360degree, sqrt 2 = 180degree, 1 = 120degree, quest is 90 horizontal
 static const int focal_diff = 5; //added/subtracted to qp depending whether mb is in focus
 static int dd = 0; //The difference between original qp of first frame and current qp
 static int rc_qp = 0;
@@ -117,9 +117,9 @@ int x264_focal_reallocate_qp( x264_t *h )
                 printf("focal_connect: failed creating mutex\n");
             }
             input_data.status = uninitialized;
-            input_data.x = 0.2;
+            input_data.x = 0;
             input_data.y = 0;
-            input_data.z = -1;
+            input_data.z = 1;
             if(x264_pthread_create(&connect_thread,NULL,x264_focal_connect,&input_data)){
                 printf("Focal failed to create thread for focal_connect\n");
             }
@@ -208,7 +208,8 @@ float x264_focal_abs_distance(x264_float2_t mb_pos){
 
     float mb_dot_focal = (focal_point.x * mb_point.x) + (focal_point.y * mb_point.y) + (focal_point.z * mb_point.z);
     float angle = acosf(mb_dot_focal/ (focal_mag * mb_point_mag));
-    return sinf(angle/4) * 2; // provides a conversion of the angle between mb_pos and focal_pos to be compaired to thresh to see if it's in FOV
+    float dist = sinf(angle/4) * 2;
+    return dist; // provides a conversion of the angle between mb_pos and focal_pos to be compaired to thresh to see if it's in FOV
     
 }
 
