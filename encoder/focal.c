@@ -75,7 +75,8 @@ static float lensRadius_left_x = 1425.675 / 6080;
 static float lensRadius_left_y = 1425.675 / 3040;
 // static float HALF_BOUNDARY = 6080 / 2.0;
 
-static float SCALE = 180.0 / 186.0;
+// static float SCALE = 180.0 / 186.0;
+static float SCALE = 1;
 
 // returns in-focus qp within valid range
 int x264_focal_qp_improve( x264_t *h, int dist ){
@@ -366,11 +367,11 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
         sphereCoords.x = h / sqrt(1 + pow(tan_theta, 2));
         sphereCoords.y = tan_theta * sphereCoords.x;
 
-        if (mb_pos.x - lensCenter.x < 0){
+        if (mb_pos.x - lensCenter.x > 0){
             sphereCoords.x = -1 * sphereCoords.x;
         }
         sphereCoords.x = sphereCoords.x * sign;
-        if (mb_pos.y - lensCenter.y < 0){
+        if (mb_pos.y - lensCenter.y > 0){
             sphereCoords.y = -1 * sphereCoords.y;
         }
     }
