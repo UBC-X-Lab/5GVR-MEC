@@ -49,11 +49,14 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
 
     //Init
     // char* dataPort = "27871"; // the port listened on for UDP "data" connection
-    char* dataPort = getenv("UDP_PORT");
-    if (dataPort == NULL){
+    char* dataPortEnv = getenv("UDP_PORT");
+    char* dataPort;
+    if (dataPortEnv == NULL){
         dataPort = "27871";
+        printf("Data port not given, set to default 27871\n");
     }else{
-        printf("Setup Head Direction Server at Port %s", dataPort);
+        dataPort = dataPortEnv;
+        printf("Setup Head Direction Server at Port %s\n", dataPort);
     }
 
     enum connection_status cStatus = disconnected;

@@ -60,12 +60,14 @@ static long double stat_total_count = 1;
 
 // Hardcoded Dimensions of center points for sphere halves on spherical video
 
+// front
 static float lensCenter_right_x = 4575.319 / 6080;
 static float lensCenter_right_y = 1521.183 / 3040;
 
 static float lensRadius_right_x = 1430.017 / 6080;
 static float lensRadius_right_y = 1430.017 / 3040;
 
+// back
 static float lensCenter_left_x = 1530.073 / 6080;
 static float lensCenter_left_y = 1515.421 / 3040;
 
@@ -97,9 +99,12 @@ int x264_focal_qp_worsen( x264_t *h, int dist ){
 
 int x264_focal_reallocate_qp( x264_t *h )
 {
+    char* lens = getenv("LENS");
     char* disable_focal = getenv("DISABLE_FOCAL");
     int isFocalDisabled = 0; //this value should be 0
+    int isFront = -1; // -1: single mode, 0: front, 1, back
     if(disable_focal!=NULL) isFocalDisabled = atoi(disable_focal);
+    if(lens != NULL) isFront = atoi(lens);
     
     //return x264_ratecontrol_mb_qp( h );
     //once at the beginning of each frame
@@ -142,8 +147,16 @@ int x264_focal_reallocate_qp( x264_t *h )
     }
     //calc distance from current mb to focal point
     x264_float2_t mb_pos;
-    mb_pos.x = ( (float) h->mb.i_mb_x ) / x_max;
-    mb_pos.y = ( (float) h->mb.i_mb_y ) / y_max;
+    // front
+    if (isFront == 0){
+        mb_pos.x = ((float) h->mb.i_mb_x + x_max) / (x_max * 2);
+    }else if (isFront == 1){
+        mb_pos.x = ((float) h->mb.i_mb_x) / (x_max * 2);
+    }else{
+        mb_pos.x = ((float) h->mb.i_mb_x) / x_max;
+    }
+    mb_pos.y = ((float) h->mb.i_mb_y) / y_max;
+
     float dist = x264_focal_abs_distance(mb_pos);
     // printf("distance %f\n", dist);
     //apply qp changes
