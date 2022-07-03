@@ -166,6 +166,7 @@ void run_receiver() {
 			}
 			else if (iResult == 0) {
 				fprintf(stderr, "RECEIVER: Connection closing...\n");
+				return;
 			}
 			else {
 				fprintf(stdout, "RECEIVER: Connection closing...\n");
