@@ -367,8 +367,9 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
 
         sphereCoords.x = h / sqrt(1 + pow(tan_theta, 2));
         sphereCoords.y = tan_theta * sphereCoords.x;
-
-        if (mb_pos.x - lensCenter.x > 0){
+	
+	// Unity is left handed, so x points right, y points up, and z points forward
+        if (mb_pos.x - lensCenter.x < 0){
             sphereCoords.x = -1 * sphereCoords.x;
         }
         sphereCoords.x = sphereCoords.x * sign;
