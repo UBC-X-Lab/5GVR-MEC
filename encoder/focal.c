@@ -119,7 +119,7 @@ int x264_focal_reallocate_qp( x264_t *h )
             input_data.status = uninitialized;
             input_data.x = 0;
             input_data.y = 0;
-            input_data.z = 1;
+            input_data.z = -1;
             if(x264_pthread_create(&connect_thread,NULL,x264_focal_connect,&input_data)){
                 printf("Focal failed to create thread for focal_connect\n");
             }
