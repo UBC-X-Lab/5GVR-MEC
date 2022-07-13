@@ -40,7 +40,7 @@ static x264_pthread_t connect_thread;
 static x264_focal_input_t input_data = {};
 
 // SIN( FOV / 4 ) = thresh / 2
-static const float thresh = 0.52; //2 = 360degree, sqrt 2 = 180degree, 1 = 120degree, quest is 90 horizontal
+static const float thresh = UNITY_PI / 3; //2 = 360degree, sqrt 2 = 180degree, 1 = 120degree, quest is 90 horizontal
 static const int focal_diff = 5; //added/subtracted to qp depending whether mb is in focus
 static int dd = 0; //The difference between original qp of first frame and current qp
 static int rc_qp = 0;
@@ -117,9 +117,9 @@ int x264_focal_reallocate_qp( x264_t *h )
                 printf("focal_connect: failed creating mutex\n");
             }
             input_data.status = uninitialized;
-            input_data.x = 0;
+            input_data.x = 1;
             input_data.y = 0;
-            input_data.z = -1;
+            input_data.z = 0;
             if(x264_pthread_create(&connect_thread,NULL,x264_focal_connect,&input_data)){
                 printf("Focal failed to create thread for focal_connect\n");
             }
@@ -165,8 +165,8 @@ int x264_focal_reallocate_qp( x264_t *h )
     if(dist < thresh){        
         qp = x264_ratecontrol_mb_qp( h );
         //qp = x264_focal_qp_improve(h, dist);
-        stat_total_qp += qp;
-        stat_total_count++;
+        // stat_total_qp += qp;
+        // stat_total_count++;
         // printf("Quantization Parameter %d\n", qp);
         return qp;
     }
@@ -203,13 +203,13 @@ float x264_focal_abs_distance(x264_float2_t mb_pos){
     float mb_point_mag = sqrt(pow(mb_point.x, 2) + pow(mb_point.y, 2) + pow(mb_point.z,2));
 
     if (mb_point_mag == 0) {
-        return thresh+1; // prevents the division by 0 if mb_point is zero. Instead returns a value which will fail the inequality with thresh
+        return UNITY_PI; // prevents the division by 0 if mb_point is zero. Instead returns a value which will fail the inequality with thresh
     }
 
     float mb_dot_focal = (focal_point.x * mb_point.x) + (focal_point.y * mb_point.y) + (focal_point.z * mb_point.z);
     float angle = acosf(mb_dot_focal/ (focal_mag * mb_point_mag));
-    float dist = sinf(angle/4) * 2;
-    return dist; // provides a conversion of the angle between mb_pos and focal_pos to be compaired to thresh to see if it's in FOV
+    // float dist = sinf(angle/4) * 2;
+    return angle; // provides a conversion of the angle between mb_pos and focal_pos to be compaired to thresh to see if it's in FOV
     
 }
 
