@@ -40,7 +40,7 @@ static x264_pthread_t connect_thread;
 static x264_focal_input_t input_data = {};
 
 // SIN( FOV / 4 ) = thresh / 2
-static const float thresh = UNITY_PI / 3; //2 = 360degree, sqrt 2 = 180degree, 1 = 120degree, quest is 90 horizontal
+static const float thresh = 0.39; //2 = 360degree, sqrt 2 = 180degree, 1 = 120degree, quest is 90 horizontal
 static const int focal_diff = 5; //added/subtracted to qp depending whether mb is in focus
 static int dd = 0; //The difference between original qp of first frame and current qp
 static int rc_qp = 0;
@@ -75,7 +75,7 @@ static float lensRadius_left_x = 1425.675 / 6080;
 static float lensRadius_left_y = 1425.675 / 3040;
 // static float HALF_BOUNDARY = 6080 / 2.0;
 
-// static float SCALE = 180.0 / 186.0;
+static float SCALE = 180.0 / 186.0;
 // static float SCALE = 1;
 
 // returns in-focus qp within valid range
@@ -205,20 +205,20 @@ float x264_focal_abs_distance(x264_float2_t mb_pos){
     float mb_point_mag = sqrt(pow(mb_point.x, 2) + pow(mb_point.y, 2) + pow(mb_point.z,2));
 
     if (mb_point_mag == 0) {
-        return UNITY_PI; // prevents the division by 0 if mb_point is zero. Instead returns a value which will fail the inequality with thresh
+        return thresh + 1; // prevents the division by 0 if mb_point is zero. Instead returns a value which will fail the inequality with thresh
     }
 
     float mb_dot_focal = (focal_point.x * mb_point.x) + (focal_point.y * mb_point.y) + (focal_point.z * mb_point.z);
     float angle = acosf(mb_dot_focal/ (focal_mag * mb_point_mag));
-    if((rand() & 0x1fff) == 0) {
-        printf("[DBG] %f,%f  %f,%f,%f  %f,%f,%f => %f\n",
-            mb_pos.x, mb_pos.y,
-            mb_point.x, mb_point.y, mb_point.z,
-            focal_point.x, focal_point.y, focal_point.z,
-            angle);
-    }
-    // float dist = sinf(angle/4) * 2;
-    return angle; // provides a conversion of the angle between mb_pos and focal_pos to be compaired to thresh to see if it's in FOV
+    // if((rand() & 0x1fff) == 0) {
+    //     printf("[DBG] %f,%f  %f,%f,%f  %f,%f,%f => %f\n",
+    //         mb_pos.x, mb_pos.y,
+    //         mb_point.x, mb_point.y, mb_point.z,
+    //         focal_point.x, focal_point.y, focal_point.z,
+    //         angle / UNITY_PI * 180);
+    // }
+    float dist = sinf(angle/4) * 2;
+    return dist; // provides a conversion of the angle between mb_pos and focal_pos to be compaired to thresh to see if it's in FOV
     
 }
 
@@ -251,67 +251,18 @@ x264_float3_t x264_focal_getSpherePos( x264_float2_t mb_pos){
     return normalized_coords;
 }
 
-// calculate normalized vector that passes through the macroblocks position on sphere in unity endpoint
-// x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
-//     int sign = -1;
-//     x264_float2_t lenseCenter; 
-//     lenseCenter.x = lensCenter_left_x;
-//     lenseCenter.y = lensCenter_left_y;
-//     float lenseRadius;
-//     lenseRadius = sqrtf(powf((lensRadius_left_x - lensCenter_left_x), 2) + powf((lensRadius_left_y - lensCenter_left_y), 2));
-//     if (mb_pos.x > HALF_BOUNDARY) {
-//         //right sphere corresponds to positive z
-//         sign = 1;
-//         lenseCenter.x = lensCenter_right_x;
-//         lenseCenter.y = lensCenter_right_y;
-//         lenseRadius = sqrtf(powf((lensRadius_right_x - lensCenter_right_x), 2) + powf((lensRadius_right_y - lensCenter_right_y), 2));
-//     }
-//     // calculate distance from center of sphere the macroblock lies on
-//     x264_float2_t radius = x264_focal_float2_add(mb_pos, x264_focal_float2_scalar_mult(-1, lenseCenter));
-//     //radius.x = mb_pos.x - lenseCenter.x;
-//     //radius.y = mb_pos.y - lenseCenter.y;
-    
-//     x264_float3_t sphereCoords;
-//     float scalar_r = x264_focal_float2_norm(radius);
-//     scalar_r = scalar_r/lenseRadius; // seems redundant not sure if this is necissary
-//     // check that the difference, scalar_r from point to center of it's sphere does not exceed lenseRadius
-//     if (scalar_r > lenseRadius) {
-//         // this means the point lies outside of the sphere image, want to quantize with 80
-//         sphereCoords.x = 0;
-//         sphereCoords.y = 0;
-//         sphereCoords.z = 0;
-//         printf("[FOCAL] mb_pos is outside of sphere video\n");
-//         return sphereCoords;
-//     }
-
-    
-//     // calculate z 
-//     sphereCoords.z = sign * cosf(scalar_r * UNITY_PI / (2* SCALE));
-//     // find h -- note though the real x and y are scalar multiples of h
-//     // we know the output should be normalized so sqrt(x^2 + y^2 + z^2) = 1 
-//     // => x^2 + y^ 2 = 1 - z^2. We by the relation of x and y, h^2 = x^2 + y^2, so h = sqrt(1-z^2) 
-    
-//     // calculate h
-//     float h = sqrt(1 - pow(sphereCoords.z, 2));
-    
-//     // calculate the x and y calues for the sphere
-//     sphereCoords.x = h * (mb_pos.x - lenseCenter.x) / (lenseRadius * scalar_r);
-//     sphereCoords.y = -1 * h * (mb_pos.y - lenseCenter.y) / (lenseRadius * scalar_r); // may need to by multiplied by a multiple of -1
-    
-//     return sphereCoords;  
-// }
-
 x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     int sign;
     x264_float2_t lensCenter;
     x264_float2_t lensRadius;
-    // x264_float2_t normalized_mb_pos;
-    // normalized_mb_pos.x = mb_pos.x / 6080.0;
-    // normalized_mb_pos.y = mb_pos.x / 3040.0;
+    
+    x264_float2_t normalized_mb_pos;
+    normalized_mb_pos.x = mb_pos.x * 2; // scale from [0, 1] to [0, 2]
+    normalized_mb_pos.y = mb_pos.y; // still [0, 1]
+
     if (mb_pos.x <= 0.5){
         // left sphere
         sign = -1;
-        mb_pos.x = mb_pos.x * 2; // [0, 1]
         lensCenter.x = lensCenter_left_x * 2; // scale from 0.25 to 0.5
         lensCenter.y = lensCenter_left_y; // 0.5
         lensRadius.x = lensRadius_left_x * 2; // scale from 0.25 to 0.5
@@ -319,18 +270,13 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     }else{
         // right sphere
         sign = 1;
-        mb_pos.x = mb_pos.x * 2; // [1, 2]
         lensCenter.x = lensCenter_right_x * 2; // scale from 0.75 to 1.5
         lensCenter.y = lensCenter_right_y; // 0.5
         lensRadius.x = lensRadius_right_x * 2; // scale from 0.25 to 0.5
         lensRadius.y = lensRadius_right_y; // 0.5
     }
 
-    // calculate distance from center of sphere the macroblock lies on
-    // float lx = (mb_pos.x - lensCenter.x) / lensRadius.x;
-    // float ly = (mb_pos.y - lensCenter.y) / lensRadius.y;
-
-    x264_float2_t radius = {mb_pos.x - lensCenter.x, mb_pos.y - lensCenter.y};
+    x264_float2_t radius = {normalized_mb_pos.x - lensCenter.x, normalized_mb_pos.y - lensCenter.y};
     float radius_mag = x264_focal_float2_norm(radius);
 
     // lensRadius.x = lensRadius.x * 2;
@@ -347,53 +293,35 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
         //printf("[FOCAL] mb_pos is outside of sphere video\n");
         return sphereCoords;
     }
-
     
     // calculate z 
     // sphereCoords.z = sign * cosf(radius_mag * UNITY_PI / (2* SCALE));
-    sphereCoords.z = sign * cosf(radius_mag * UNITY_PI);
-    // find h -- note though the real x and y are scalar multiples of h
-    // we know the output should be normalized so sqrt(x^2 + y^2 + z^2) = 1 
-    // => x^2 + y^ 2 = 1 - z^2. We by the relation of x and y, h^2 = x^2 + y^2, so h = sqrt(1-z^2) 
-    
-    // calculate h = sqrt(1 - z^2)
-    // float h = sqrt(1 - pow(sphereCoords.z, 2));
-    
-    // // calculate the x and y values for the sphere
-    // sphereCoords.x = sign * h * (mb_pos.x - lensCenter.x) / (radius_mag);
-    // // sphereCoords.x = h * (mb_pos.x - lensCenter.x) / (radius_mag);
-    // sphereCoords.y = -1 * h * (mb_pos.y - lensCenter.y) / (radius_mag); // may need to be multiplied by a multiple of -1
+    sphereCoords.z = sign * cosf(radius_mag * UNITY_PI / SCALE);
 
     float h = sqrt(1 - pow(sphereCoords.z, 2)); // sqrt(1 - z^2)
-    // if ((mb_pos.y - lensCenter.y) == 0){ // pixels are along the x axis
-    //     sphereCoords.y = 0;
-    //     sphereCoords.x = sign * h;
-    //     if (mb_pos.x - lensCenter.x < 0){
-    //         sphereCoords.x = -1 * sphereCoords.x;
-    //     }
-    // }else 
-    if ((mb_pos.x - lensCenter.x) == 0){ // pixels are along the y axis
+    
+    if (radius_mag == 0){
         sphereCoords.x = 0;
-        sphereCoords.y = h;
-        if (mb_pos.y - lensCenter.y > 0){
-            sphereCoords.y = -1 * sphereCoords.y;
-        }
-        // sphereCoords.x = 0;
-	// sphereCoords.y = 0;
+        sphereCoords.y = 0;
     }else{
-        float tan_theta = abs((mb_pos.y - lensCenter.y) / (mb_pos.x - lensCenter.x)); // y'/x' what if y or x == 0?
+        // float tan_theta = fabs((normalized_mb_pos.y - lensCenter.y) / (normalized_mb_pos.x - lensCenter.x)); // y'/x' what if y or x == 0?
 
-        sphereCoords.x = h / sqrt(1 + pow(tan_theta, 2));
-        sphereCoords.y = tan_theta * sphereCoords.x;
-        // sphereCoords.x = h * abs(mb_pos.x - lensCenter.x) / radius_mag;
-	// sphereCoords.y = h * abs(mb_pos.y - lensCenter.y) / radius_mag;
+        // sphereCoords.x = h / sqrt(1 + pow(tan_theta, 2));
+        // sphereCoords.y = tan_theta * sphereCoords.x;
+        sphereCoords.x = h * fabs(normalized_mb_pos.x - lensCenter.x) / radius_mag;
+	    sphereCoords.y = h * fabs(normalized_mb_pos.y - lensCenter.y) / radius_mag;
+        
+        // if((rand() & 0x1fff) == 0) {
+        //     printf("[DBG2] y: %f\n", fabs(normalized_mb_pos.x - lensCenter.x));
+        //     printf("[DBG2] x: %f\n", fabs(normalized_mb_pos.y - lensCenter.y));
+        // }
 	
-	// Unity is left handed, so x points right, y points up, and z points forward
-        if (mb_pos.x - lensCenter.x < 0){
+	    // Unity is left handed, so x points right, y points up, and z points forward
+        if (normalized_mb_pos.x - lensCenter.x < 0){
             sphereCoords.x = -1 * sphereCoords.x;
         }
         sphereCoords.x = sphereCoords.x * sign;
-        if (mb_pos.y - lensCenter.y > 0){
+        if (normalized_mb_pos.y - lensCenter.y > 0){
             sphereCoords.y = -1 * sphereCoords.y;
         }
     }
