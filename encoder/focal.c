@@ -40,7 +40,7 @@ static x264_pthread_t connect_thread;
 static x264_focal_input_t input_data = {};
 
 // SIN( FOV / 4 ) = thresh / 2
-static const float thresh = UNITY_PI / 2; //2 = 360degree, sqrt 2 = 180degree, 1 = 120degree, quest is 90 horizontal
+static const float thresh = UNITY_PI / 3; //2 = 360degree, sqrt 2 = 180degree, 1 = 120degree, quest is 90 horizontal
 static const int focal_diff = 5; //added/subtracted to qp depending whether mb is in focus
 static int dd = 0; //The difference between original qp of first frame and current qp
 static int rc_qp = 0;
@@ -76,7 +76,7 @@ static float lensRadius_left_y = 1425.675 / 3040;
 // static float HALF_BOUNDARY = 6080 / 2.0;
 
 // static float SCALE = 180.0 / 186.0;
-static float SCALE = 1;
+// static float SCALE = 1;
 
 // returns in-focus qp within valid range
 int x264_focal_qp_improve( x264_t *h, int dist ){
@@ -210,6 +210,13 @@ float x264_focal_abs_distance(x264_float2_t mb_pos){
 
     float mb_dot_focal = (focal_point.x * mb_point.x) + (focal_point.y * mb_point.y) + (focal_point.z * mb_point.z);
     float angle = acosf(mb_dot_focal/ (focal_mag * mb_point_mag));
+    if((rand() & 0x1fff) == 0) {
+        printf("[DBG] %f,%f  %f,%f,%f  %f,%f,%f => %f\n",
+            mb_pos.x, mb_pos.y,
+            mb_point.x, mb_point.y, mb_point.z,
+            focal_point.x, focal_point.y, focal_point.z,
+            angle);
+    }
     // float dist = sinf(angle/4) * 2;
     return angle; // provides a conversion of the angle between mb_pos and focal_pos to be compaired to thresh to see if it's in FOV
     
@@ -304,22 +311,29 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     if (mb_pos.x <= 0.5){
         // left sphere
         sign = -1;
-        lensCenter.x = lensCenter_left_x;
-        lensCenter.y = lensCenter_left_y;
-        lensRadius.x = lensRadius_left_x;
-        lensRadius.y = lensRadius_left_y;
+        mb_pos.x = mb_pos.x * 2; // [0, 1]
+        lensCenter.x = lensCenter_left_x * 2; // scale from 0.25 to 0.5
+        lensCenter.y = lensCenter_left_y; // 0.5
+        lensRadius.x = lensRadius_left_x * 2; // scale from 0.25 to 0.5
+        lensRadius.y = lensRadius_left_y; // 0.5
     }else{
         // right sphere
         sign = 1;
-        lensCenter.x = lensCenter_right_x;
-        lensCenter.y = lensCenter_right_y;
-        lensRadius.x = lensRadius_right_x;
-        lensRadius.y = lensRadius_right_y;
+        mb_pos.x = mb_pos.x * 2; // [1, 2]
+        lensCenter.x = lensCenter_right_x * 2; // scale from 0.75 to 1.5
+        lensCenter.y = lensCenter_right_y; // 0.5
+        lensRadius.x = lensRadius_right_x * 2; // scale from 0.25 to 0.5
+        lensRadius.y = lensRadius_right_y; // 0.5
     }
 
     // calculate distance from center of sphere the macroblock lies on
-    x264_float2_t radius = x264_focal_float2_add(mb_pos, x264_focal_float2_scalar_mult(-1, lensCenter));
+    // float lx = (mb_pos.x - lensCenter.x) / lensRadius.x;
+    // float ly = (mb_pos.y - lensCenter.y) / lensRadius.y;
+
+    x264_float2_t radius = {mb_pos.x - lensCenter.x, mb_pos.y - lensCenter.y};
     float radius_mag = x264_focal_float2_norm(radius);
+
+    // lensRadius.x = lensRadius.x * 2;
     float lensRadius_mag = x264_focal_float2_norm(lensRadius);
     
     x264_float3_t sphereCoords;
@@ -337,7 +351,7 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     
     // calculate z 
     // sphereCoords.z = sign * cosf(radius_mag * UNITY_PI / (2* SCALE));
-    sphereCoords.z = sign * cosf(radius_mag / SCALE * (UNITY_PI / 2));
+    sphereCoords.z = sign * cosf(radius_mag * UNITY_PI);
     // find h -- note though the real x and y are scalar multiples of h
     // we know the output should be normalized so sqrt(x^2 + y^2 + z^2) = 1 
     // => x^2 + y^ 2 = 1 - z^2. We by the relation of x and y, h^2 = x^2 + y^2, so h = sqrt(1-z^2) 
@@ -361,7 +375,7 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
     if ((mb_pos.x - lensCenter.x) == 0){ // pixels are along the y axis
         sphereCoords.x = 0;
         sphereCoords.y = h;
-        if (mb_pos.y - lensCenter.y < 0){
+        if (mb_pos.y - lensCenter.y > 0){
             sphereCoords.y = -1 * sphereCoords.y;
         }
         // sphereCoords.x = 0;
