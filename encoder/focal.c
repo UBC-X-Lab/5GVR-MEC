@@ -40,7 +40,7 @@ static x264_pthread_t connect_thread;
 static x264_focal_input_t input_data = {};
 
 // SIN( FOV / 4 ) = thresh / 2
-static const float thresh = UNITY_PI / 3; //2 = 360degree, sqrt 2 = 180degree, 1 = 120degree, quest is 90 horizontal
+static const float thresh = UNITY_PI / 2; //2 = 360degree, sqrt 2 = 180degree, 1 = 120degree, quest is 90 horizontal
 static const int focal_diff = 5; //added/subtracted to qp depending whether mb is in focus
 static int dd = 0; //The difference between original qp of first frame and current qp
 static int rc_qp = 0;
@@ -157,6 +157,8 @@ int x264_focal_reallocate_qp( x264_t *h )
         mb_pos.x = ((float) h->mb.i_mb_x) / x_max;
     }
     mb_pos.y = ((float) h->mb.i_mb_y) / y_max;
+
+    // printf("x: %f, y: %f\n", mb_pos.x, mb_pos.y);
 
     float dist = x264_focal_abs_distance(mb_pos);
     // printf("distance %f\n", dist);
@@ -362,11 +364,15 @@ x264_float3_t x264_focal_getSpherePos_sphereInput(x264_float2_t mb_pos) {
         if (mb_pos.y - lensCenter.y < 0){
             sphereCoords.y = -1 * sphereCoords.y;
         }
+        // sphereCoords.x = 0;
+	// sphereCoords.y = 0;
     }else{
         float tan_theta = abs((mb_pos.y - lensCenter.y) / (mb_pos.x - lensCenter.x)); // y'/x' what if y or x == 0?
 
         sphereCoords.x = h / sqrt(1 + pow(tan_theta, 2));
         sphereCoords.y = tan_theta * sphereCoords.x;
+        // sphereCoords.x = h * abs(mb_pos.x - lensCenter.x) / radius_mag;
+	// sphereCoords.y = h * abs(mb_pos.y - lensCenter.y) / radius_mag;
 	
 	// Unity is left handed, so x points right, y points up, and z points forward
         if (mb_pos.x - lensCenter.x < 0){
