@@ -61,7 +61,7 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
 
     enum connection_status cStatus = disconnected;
 
-    int d_sockfd, dtcp_sockfd, numbytes;  
+    int d_sockfd, numbytes;  // dtcp_sockfd
 	struct addrinfo hints, d_hints, *servinfo, *d_servinfo, *p, *d_p;
     char d_buf[MAXBUFLEN];
 	int rv, ret;
@@ -82,12 +82,14 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
     pos_data->status = uninitialized;
     x264_pthread_mutex_unlock(&pos_data->mutex);
 
-    int isTCP = 0;
-    char* input_protocol = getenv("PROTOCOL");
-    if(input_protocol!=NULL) {
-        // strcmp returns 0 if they are equal
-        isTCP = (!strcmp("TCP", input_protocol));
-    }
+    // int isTCP = 0;
+    // char* input_protocol = getenv("PROTOCOL");
+    // if(input_protocol!=NULL) {
+    //     // strcmp returns 0 if they are equal
+    //     isTCP = (!strcmp("TCP", input_protocol));
+    // }
+
+    
 
 
     while(1){
@@ -103,11 +105,11 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                 //Open socket for position data connection
                 memset(&d_hints, 0, sizeof d_hints);
 	            d_hints.ai_family = AF_UNSPEC;
-                if (isTCP) {
-                    d_hints.ai_socktype = SOCK_STREAM;
-                } else {
-                    d_hints.ai_socktype = SOCK_DGRAM;
-                }
+                // if (isTCP) {
+                //     d_hints.ai_socktype = SOCK_STREAM;
+                // } else {
+                d_hints.ai_socktype = SOCK_DGRAM;
+                //}
                 d_hints.ai_flags = AI_PASSIVE;
 
                 if ((rv = getaddrinfo(NULL, dataPort, &d_hints, &d_servinfo)) != 0) {
@@ -140,48 +142,48 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                     break;
                 }
 
-                if (isTCP) {
-                    // Now server is ready to listen and verification 
-                    if ((listen(d_sockfd, 5)) != 0) { 
-                        printf("Listen failed...\n"); 
-                        exit(1); 
-                    } 
-	                printf("Server listening...\n");
-	                void* x264_get_in_addr(struct sockaddr *sa);
+                // if (isTCP) {
+                //     // Now server is ready to listen and verification 
+                //     if ((listen(d_sockfd, 5)) != 0) { 
+                //         printf("Listen failed...\n"); 
+                //         exit(1); 
+                //     } 
+	            //     printf("Server listening...\n");
+	            //     void* x264_get_in_addr(struct sockaddr *sa);
 
-	                while(1) {
-		                sin_size = sizeof their_addr;
-		                printf("Waiting for connection...\n");
-		                // accept connection
-    	                dtcp_sockfd = accept(d_sockfd, (struct sockaddr *)&their_addr, &sin_size); 
-    	                if (dtcp_sockfd < 0) { 
-                    	printf("server accept failed...%s\n", strerror(errno));
-                        	continue; 
-    	                }
-		                printf("server accepted client\n");
-		                inet_ntop(their_addr.ss_family, x264_get_in_addr((struct sockaddr *)&cli), s, sizeof s);
-		                printf("x264_focal_connect: accepted connection from %s\n", s);
-                        // close(d_sockfd);
-		                break;
-	                }
-                    d_sockfd = dtcp_sockfd;
-                }
+	            //     while(1) {
+		        //         sin_size = sizeof their_addr;
+		        //         printf("Waiting for connection...\n");
+		        //         // accept connection
+    	        //         dtcp_sockfd = accept(d_sockfd, (struct sockaddr *)&their_addr, &sin_size); 
+    	        //         if (dtcp_sockfd < 0) { 
+                //     	printf("server accept failed...%s\n", strerror(errno));
+                //         	continue; 
+    	        //         }
+		        //         printf("server accepted client\n");
+		        //         inet_ntop(their_addr.ss_family, x264_get_in_addr((struct sockaddr *)&cli), s, sizeof s);
+		        //         printf("x264_focal_connect: accepted connection from %s\n", s);
+                //         // close(d_sockfd);
+		        //         break;
+	            //     }
+                //     d_sockfd = dtcp_sockfd;
+                // }
 
                 freeaddrinfo(d_servinfo); // all done with this structure
 
                 cStatus = connected_awaiting_data;
                 break;
             case connected_awaiting_data:
-                if (isTCP) {
-                    if ((numbytes = recv(d_sockfd, d_buf, 12, MSG_WAITALL)) == -1) {
-                        cStatus = disconnected;
-                        break;
-                    }
-                } else {
-                    if ((numbytes = recvfrom(d_sockfd, d_buf, MAXBUFLEN-1 , 0, NULL, NULL)) == -1) {
-                        break;
-                    }
+                // if (isTCP) {
+                //     if ((numbytes = recv(d_sockfd, d_buf, 12, MSG_WAITALL)) == -1) {
+                //         cStatus = disconnected;
+                //         break;
+                //     }
+                // } else {
+                if ((numbytes = recvfrom(d_sockfd, d_buf, MAXBUFLEN-1 , 0, NULL, NULL)) == -1) {
+                    break;
                 }
+                // }
 
                 if(numbytes != 12){
                     printf("Error in focal_connect: Received incorrect number of bytes: %d %s\n", numbytes, strerror(errno));
