@@ -63,13 +63,22 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
 
     int d_sockfd, numbytes;  // dtcp_sockfd
 	struct addrinfo hints, d_hints, *servinfo, *d_servinfo, *p, *d_p;
+    
     char d_buf[MAXBUFLEN];
+    
 	int rv, ret;
     int yes = 1; // for setsockopt() SO_REUSEADDR, below
-    struct sockaddr_in cli;
+
 	struct sockaddr_storage their_addr;
     socklen_t sin_size;
     char s[INET6_ADDRSTRLEN];
+
+    struct sockaddr_in cliaddr;
+    socklen_t cliaddr_len;
+    char s_buf[MAXBUFLEN];
+    int forward_ready = 0;
+
+    // memset(&cliaddr, 0, sizeof(cliaddr));
 
     x264_focal_input_t* pos_data = ptr;
 
@@ -89,7 +98,11 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
     //     isTCP = (!strcmp("TCP", input_protocol));
     // }
 
-    
+    int isHLClient = 0;
+    char* HLClient = getenv("HLCLIENT");
+    if (HLClient != NULL){
+        isHLClient = atoi(HLClient);
+    }
 
 
     while(1){
@@ -180,17 +193,19 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                 //         break;
                 //     }
                 // } else {
-                if ((numbytes = recvfrom(d_sockfd, d_buf, MAXBUFLEN-1 , 0, NULL, NULL)) == -1) {
+                cliaddr_len = sizeof(cliaddr);
+                if ((numbytes = recvfrom(d_sockfd, d_buf, MAXBUFLEN-1 , 0, (struct sockaddr *) &cliaddr, &cliaddr_len)) == -1) {
+                    printf("[FOCAL CONNECT] RECEIVE FAILED!\n");
                     break;
                 }
                 // }
 
-                if(numbytes != 12){
-                    printf("Error in focal_connect: Received incorrect number of bytes: %d %s\n", numbytes, strerror(errno));
-                } else {
+                if(numbytes == 12){
                     float* xp = (float*) &d_buf[0];
                     float* yp = (float*) &d_buf[4];
                     float* zp = (float*) &d_buf[8];
+                    memcpy(s_buf, d_buf, 12);
+                    forward_ready = 1;
                     float x = *xp;
                     float y = *yp;
                     float z = *zp;
@@ -200,6 +215,17 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                     pos_data->y = y;
                     pos_data->z = z;
                     x264_pthread_mutex_unlock(&pos_data->mutex);
+                }else if (numbytes == 4 && isHLClient){
+                    printf("Forward head data to the hololens client!\n");
+                    if (forward_ready){
+                        printf("IP address is: %s\n", inet_ntoa(cliaddr.sin_addr));
+                        printf("port is: %d\n", (int) ntohs(cliaddr.sin_port));
+                        if (sendto(d_sockfd, s_buf, 12, 0, (struct sockaddr *) &cliaddr, cliaddr_len) == -1){
+                            printf("FORWARD FAILED!");
+                        }
+                    }
+                }else{
+                    printf("Error in focal_connect: Received incorrect number of bytes: %d %s\n", numbytes, strerror(errno));
                 }
                 break;
         }
