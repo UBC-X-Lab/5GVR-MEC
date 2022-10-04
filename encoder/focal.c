@@ -40,7 +40,7 @@ static x264_pthread_t connect_thread;
 static x264_focal_input_t input_data = {};
 
 // SIN( FOV / 4 ) = thresh / 2
-static const float thresh = 0.39; //2 = 360degree, sqrt 2 = 180degree, 1 = 120degree, quest is 90 horizontal
+// static const float thresh = 0.39; //2 = 360degree, sqrt 2 = 180degree, 1 = 120degree, quest is 90 horizontal
 static const int focal_diff = 5; //added/subtracted to qp depending whether mb is in focus
 static int dd = 0; //The difference between original qp of first frame and current qp
 static int rc_qp = 0;
@@ -106,6 +106,10 @@ int x264_focal_reallocate_qp( x264_t *h )
     int isFront = -1; // -1: single mode, 0: front, 1, back
     if(disable_focal!=NULL) isFocalDisabled = atoi(disable_focal);
     if(lens != NULL) isFront = atoi(lens);
+
+    char* thresh_char = getenv("THRESH");
+    float thresh = 0.39; // default 90 degrees
+    if (thresh_char!=NULL) thresh = atof(thresh_char);
     
     //return x264_ratecontrol_mb_qp( h );
     //once at the beginning of each frame
@@ -184,6 +188,11 @@ float x264_focal_abs_distance(x264_float2_t mb_pos){
     // get enviornment variable to determine how distance is calculated for macroblock
     int isVideoPlane = 0;
     char* input_video_geometry = getenv("INPUT");
+    
+    char* thresh_char = getenv("THRESH");
+    float thresh = 0.39; // default 90 degrees
+    if (thresh_char!=NULL) thresh = atof(thresh_char);
+    
     if(input_video_geometry!=NULL) {
         // strcmp returns 0 if they are equal
         isVideoPlane = (!strcmp("PLANE", input_video_geometry));
