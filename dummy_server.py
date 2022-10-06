@@ -24,6 +24,16 @@ def main():
         print(f"Camera connection from {addr}")
 
     # pass through
+    while True:
+        if in_conn:
+            data = in_conn.recv(8192)
+        else:
+            break
+
+        if out_conn:
+            out_conn.sendall(data)
+        else:
+            break
 
 if __name__ == "__main__":
     OUT_PORT = int(sys.argv[1])
