@@ -2,7 +2,7 @@ import socket
 import struct
 import sys
 
-HOST = "localhost"  # Standard loopback interface address (localhost)
+HOST = "74.198.53.47"  # Standard loopback interface address (localhost)
 IN_PORT = 27873 # video input port
 OUT_PORT = 27872  # video output port
 
