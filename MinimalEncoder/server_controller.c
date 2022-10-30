@@ -24,7 +24,7 @@
 
 /* Parameters */
 //static char* SRC_STREAM = "udp://@0.0.0.0:4000";
-static char* SRC_STREAM = "../test_files/spiderman1080.mp4";
+static char* SRC_STREAM = "../../static_videos/inside_left.mp4";
 struct timeval tv;
 
 pthread_attr_t attr;

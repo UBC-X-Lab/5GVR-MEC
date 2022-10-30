@@ -29,7 +29,7 @@ AVCodecContext* decode_ctx = NULL;
 
 static int g_avSteamIndex;
 
-struct timeval tv; 
+struct timeval tv;
 
 static int open_codec_context(int *stream_idx, AVCodecContext **dec_ctx, AVFormatContext *fmt_ctx, enum AVMediaType type) {
     int ret, stream_index;
@@ -160,6 +160,7 @@ void run_decoder() {
     int ret;
     AVPacket* pkt;
     AVFrame* frame;
+    
     while(1) {
         if (q_is_dead(decode_frame_q)) {
             printf("DECODE: Received signal to terminate, decoder shutting down\n");
@@ -172,17 +173,25 @@ void run_decoder() {
             avcodec_free_context(&decode_ctx);
             return; 
         }
+
+        gettimeofday(&tv, NULL);
+        double start = buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec);
+
         frame = av_frame_alloc();
         ret = decode(decode_ctx, pkt, frame);
         if (ret < 0) {
             continue;
         }
         fprintf(stderr, "frame has size:%d,pts:%ld, key: %d\n", frame->pkt_size, frame->pts, frame->key_frame);
-
+        // gettimeofday(&tv, NULL);
+        
 
         /* throws decoded decode_frame_q to go to encode thread */
         q_enqueue(decode_frame_q, frame);
         frame = NULL;
+        gettimeofday(&tv, NULL);
+        // fprintf(stderr, "Decode time: %lu.%06ld\n", tv.tv_sec, tv.tv_usec);
+        fprintf(stderr, "Decode time: %f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec) - start);
     }
     printf("DECODE: freeing the av codec context associated with decode thread\n");
     avcodec_free_context(&decode_ctx);

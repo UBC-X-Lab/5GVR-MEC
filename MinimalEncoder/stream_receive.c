@@ -58,6 +58,10 @@ void run_receiver() {
     AVPacket* pkt;
     fprintf(stdout, "running receive thread\n");
     printf("Please start input stream if not already started\n");
+
+    gettimeofday(&tv, NULL);
+    double start = buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec);
+    
     while(1) {
         if (q_is_dead(pkt_q)) {
             fprintf(stdout, "Receive thread received kill signal\n");
@@ -65,16 +69,19 @@ void run_receiver() {
         }
         pkt = av_packet_alloc();
         while(1) {
-            fprintf(stdout, "Receiving frame from stream\n");
-            gettimeofday(&tv, NULL);
-            fprintf(stderr, "stream_receive,calling,av_read_frame,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
+            // fprintf(stdout, "Receiving frame from stream\n");
+            // gettimeofday(&tv, NULL);
+            // fprintf(stderr, "stream_receive,calling,av_read_frame,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
+            // buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec);
             int ret = av_read_frame(format_context, pkt);
-            gettimeofday(&tv, NULL);
-            fprintf(stderr, "stream_receive,returning,av_read_frame,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
+            // gettimeofday(&tv, NULL);
+            // fprintf(stderr, "stream_receive,returning,av_read_frame,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
+            // buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec);
             if (ret < 0) {
                 fprintf(stdout, "Stream has ended\n");
                 q_kill(pkt_q);
                 av_packet_free(&pkt);
+                avformat_close_input(&format_context);
                 return;
             }
             if (pkt->stream_index == g_avVideoStreamIndex) {
@@ -82,16 +89,29 @@ void run_receiver() {
             }
             av_packet_unref(pkt);
         }
-        printf("frame has data stream index: %d, size %d, flags %d\n", pkt->stream_index, pkt->size, pkt->flags);
-        fprintf(stdout, "New frame queued for decoding\n");
-        gettimeofday(&tv, NULL);
-        fprintf(stderr, "stream_receive,calling,q_enqueue,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
-        q_enqueue(pkt_q, pkt);
-        gettimeofday(&tv, NULL);
-        fprintf(stderr, "stream_receive,returning,q_enqueue,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
+        // printf("frame has data stream index: %d, size %d, flags %d\n", pkt->stream_index, pkt->size, pkt->flags);
+        // fprintf(stdout, "New frame queued for decoding\n");
+        // gettimeofday(&tv, NULL);
+        // fprintf(stderr, "stream_receive,calling,q_enqueue,%f,size:%d,pts:%ld\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec), pkt->size, pkt->pts);
+        // buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec);
+
+        while (1){
+            gettimeofday(&tv, NULL);
+            double pause = buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec) - start;
+            if (pause > 0.033){
+                printf("%f\n", pause);
+                q_enqueue(pkt_q, pkt);
+                start = buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec);
+                break;
+            }
+        }
+
+        // gettimeofday(&tv, NULL);
+        // fprintf(stderr, "stream_receive,returning,q_enqueue,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
+        // buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec);
         pkt = NULL;
     }
-    // fprintf(stdout, "Receiver: Freeing packet used for receival\n");
+    fprintf(stdout, "Receiver: Freeing packet used for receival\n");
     av_packet_free(&pkt);
     fprintf(stdout, "Receiver: Closing input\n");
     avformat_close_input(&format_context);
