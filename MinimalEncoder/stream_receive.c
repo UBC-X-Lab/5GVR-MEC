@@ -98,17 +98,23 @@ void run_receiver() {
         while (1){
             gettimeofday(&tv, NULL);
             double pause = buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec) - start;
-            if (pause > 0.033){
+            if (pause > 1.0 / 30){
                 printf("%f\n", pause);
                 q_enqueue(pkt_q, pkt);
                 start = buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec);
                 break;
             }
         }
-
         // gettimeofday(&tv, NULL);
-        // fprintf(stderr, "stream_receive,returning,q_enqueue,%f\n", buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec));
-        // buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec);
+        // long pause = (long) ((buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec) - start) * 1000000);
+        // usleep(33333 - pause);
+        
+        // gettimeofday(&tv, NULL);
+        // double test_pause = buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec) - start;
+        // printf("%f\n", test_pause);
+        
+        // q_enqueue(pkt_q, pkt);
+        // start = buildtimestamp((long) tv.tv_sec, (long) tv.tv_usec);
         pkt = NULL;
     }
     fprintf(stdout, "Receiver: Freeing packet used for receival\n");
