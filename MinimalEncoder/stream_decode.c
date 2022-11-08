@@ -182,7 +182,7 @@ void run_decoder() {
         if (ret < 0) {
             continue;
         }
-        fprintf(stderr, "frame has size:%d,pts:%ld, key: %d\n", frame->pkt_size, frame->pts, frame->key_frame);
+        fprintf(stderr, "frame has size:%d,pts:%ld,dts:%ld,key: %d\n", frame->pkt_size, frame->pkt_pts, frame->pkt_dts, frame->key_frame);
         // gettimeofday(&tv, NULL);
         
 
