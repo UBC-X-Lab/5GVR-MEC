@@ -48,6 +48,8 @@ static int rc_qp = 0;
 static int valid_pos = 0;
 x264_float3_t focal_point;
 
+static double time_stamp;
+
 static float x_max = 0; //width of video in mb's
 static float y_max = 0; //height of video in mb's
 
@@ -78,6 +80,24 @@ static float lensRadius_left_y = 1425.675 / 3040;
 static float SCALE = 180.0 / 186.0;
 // static float SCALE = 1;
 
+static double time_start = 0.0;
+static struct timeval tv;
+
+static char* lens;
+static char* disable_focal;
+static int isFocalDisabled;
+static int isFront;
+
+static char* thresh_char;
+static float thresh;
+
+static char* dynamic_thresh;
+static int is_thresh_dynamic;
+
+// double x264_buildtimestamp(long sec, long usec) {
+//     return sec + (usec * 0.000001);
+// }
+
 // returns in-focus qp within valid range
 int x264_focal_qp_improve( x264_t *h, int dist ){
     int out = x264_ratecontrol_mb_qp( h ) - focal_diff;
@@ -99,23 +119,27 @@ int x264_focal_qp_worsen( x264_t *h, int dist ){
 }
 
 int x264_focal_reallocate_qp( x264_t *h )
-{
-    char* lens = getenv("LENS");
-    char* disable_focal = getenv("DISABLE_FOCAL");
-    int isFocalDisabled = 0; //this value should be 0
-    int isFront = -1; // -1: single mode, 0: front, 1, back
-    if(disable_focal!=NULL) isFocalDisabled = atoi(disable_focal);
-    if(lens != NULL) isFront = atoi(lens);
-
-    char* thresh_char = getenv("THRESH");
-    float thresh = 0.39; // default 90 degrees
-    if (thresh_char!=NULL) thresh = atof(thresh_char);
-    
+{   
     //return x264_ratecontrol_mb_qp( h );
     //once at the beginning of each frame
     if(h->mb.i_mb_x == 0 && h->mb.i_mb_y == 0){
         //One time initialization at beginning of video
         if(init == 0){
+            lens = getenv("LENS");
+            disable_focal = getenv("DISABLE_FOCAL");
+            isFocalDisabled = 0; //this value should be 0
+            isFront = -1; // -1: single mode, 0: front, 1, back
+            if(disable_focal!=NULL) isFocalDisabled = atoi(disable_focal);
+            if(lens != NULL) isFront = atoi(lens);
+
+            thresh_char = getenv("THRESH");
+            thresh = 0.38; // default 90 degrees
+            if (thresh_char!=NULL) thresh = atof(thresh_char);
+
+            dynamic_thresh = getenv("DYNAMIC_THRESH");
+            is_thresh_dynamic = 0;
+            if (dynamic_thresh != NULL) is_thresh_dynamic = atoi(dynamic_thresh);
+
             //start client routine
             if( x264_pthread_mutex_init( &input_data.mutex, NULL ) ){
                 printf("focal_connect: failed creating mutex\n");
@@ -131,7 +155,7 @@ int x264_focal_reallocate_qp( x264_t *h )
             stat_total_qp = rc_qp;
             stat_total_count = 1;
             x_max = (float) h->mb.i_mb_width;
-            y_max = (float) h->mb.i_mb_height;
+            y_max = (float) h->mb.i_mb_height;            
             init = 1;
         }
         //int qp_new = x264_ratecontrol_mb_qp( h );
@@ -144,11 +168,14 @@ int x264_focal_reallocate_qp( x264_t *h )
         focal_point.x = input_data.x;
         focal_point.y = input_data.y;
         focal_point.z = input_data.z;
+        time_stamp = input_data.timestamp;
         x264_pthread_mutex_unlock(&input_data.mutex);
         if(isFocalDisabled)printf("Focal is Disabled!\n");
         printf("currqp %d, avgqp = %Lf. Sample size = %Lf\n", x264_ratecontrol_mb_qp( h ) ,(stat_total_qp / stat_total_count), stat_total_count);
-        printf("x = %f, y = %f, z = %f\n",focal_point.x,focal_point.y,focal_point.z);
+        printf("x = %f, y = %f, z = %f, ts = %lf\n",focal_point.x,focal_point.y,focal_point.z, time_stamp);
         printf("x_max is %f, y_max is %f\n", (float) h->mb.i_mb_width, (float) h->mb.i_mb_height);
+
+        h->timestamp = time_stamp;
     }
     //calc distance from current mb to focal point
     x264_float2_t mb_pos;

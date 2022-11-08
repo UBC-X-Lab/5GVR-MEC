@@ -38,6 +38,7 @@ typedef struct x264_focal_input
     float x;
     float y;
     float z;
+    double timestamp;
 } x264_focal_input_t;
 
 #define x264_focal_connect x264_template(focal_connect)

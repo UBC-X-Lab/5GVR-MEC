@@ -272,6 +272,8 @@ struct x264_t
     /* encoder parameters */
     x264_param_t    param;
 
+    double timestamp;
+
     x264_t          *thread[X264_THREAD_MAX+1];
     x264_t          *lookahead_thread[X264_LOOKAHEAD_THREAD_MAX];
     int             b_thread_active;

@@ -205,17 +205,19 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                     double* yp = (double*) &d_buf[8];
                     double* zp = (double*) &d_buf[16];
                     double* time_stamp = (double*) &d_buf[24];
-                    printf("ts: %lf\n", *time_stamp);
+                    // printf("ts: %lf\n", *time_stamp);
                     memcpy(s_buf, d_buf, 12);
                     forward_ready = 1;
                     float x = (float) *xp;
                     float y = (float) *yp;
                     float z = (float) *zp;
+                    double ts = (double) *time_stamp;
                     x264_pthread_mutex_lock(&pos_data->mutex);
                     pos_data->status = valid;
                     pos_data->x = x;
                     pos_data->y = y;
                     pos_data->z = z;
+                    pos_data->timestamp = ts;
                     x264_pthread_mutex_unlock(&pos_data->mutex);
                 }else if (numbytes == 4 && isHLClient){
                     printf("Forward head data to the hololens client!\n");

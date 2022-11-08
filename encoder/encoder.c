@@ -3803,6 +3803,10 @@ int     x264_encoder_encode( x264_t *h,
     else
         if( (intptr_t)slices_write( h ) )
             return -1;
+    
+    // pic_in->i_pts = (long) h->timestamp;
+    // pic_in->i_dts = (long) h->timestamp;
+
 
     return encoder_frame_end( thread_oldest, thread_current, pp_nal, pi_nal, pic_out );
 }
@@ -3856,8 +3860,16 @@ static int encoder_frame_end( x264_t *h, x264_t *thread_current,
     pic_out->b_keyframe = h->fenc->b_keyframe;
     pic_out->i_pic_struct = h->fenc->i_pic_struct;
 
-    pic_out->i_pts = h->fdec->i_pts;
-    pic_out->i_dts = h->fdec->i_dts;
+    // pic_out->i_pts = h->fdec->i_pts;
+    pic_out->i_pts = (long) h->timestamp;
+    // h->fdec->i_pts = (long) h->timestamp;
+    printf("timestamp in: %lf\n", h->timestamp);
+    printf("timestamp converted to long: %ld\n", (long) h->timestamp);
+    printf("picout pts: %ld\n", pic_out->i_pts);
+    // pic_out->i_dts = h->fdec->i_dts;
+    
+    pic_out->i_dts = (long) h->timestamp;
+    // h->fdec->i_dts = (long) h->timestamp;
 
     if( pic_out->i_pts < pic_out->i_dts )
         x264_log( h, X264_LOG_WARNING, "invalid DTS: PTS is less than DTS\n" );

@@ -27,6 +27,7 @@
 #define X264_ENCODER_FOCAL_H
 
 #include "common/common.h"
+#include <unistd.h>
 
 typedef struct x264_float2
 {
@@ -40,6 +41,9 @@ typedef struct x264_float3
     float y;
     float z;
 } x264_float3_t;
+
+// #define x264_buildtimestamp x264_template(buildtimestamp)
+// double x264_buildtimestamp(long sec, long usec);
 
 #define x264_focal_qp_improve x264_template(focal_qp_improve)
 int x264_focal_qp_improve( x264_t *h, int dist );
