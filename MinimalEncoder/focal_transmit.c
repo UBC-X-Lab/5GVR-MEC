@@ -33,7 +33,7 @@ void transmit() {
         if (q_dequeue(pkt_q, (void**) &pkt) < 0) {
             fprintf(stderr, "transmit: stream ended. Transmitter shutting down\n");
             q_kill(pkt_q); // signal kill on pkt queue so encoder thread knows to terminate
-            return; 
+            return;
         }
 
 		if (pkt != NULL) {
