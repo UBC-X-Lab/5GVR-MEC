@@ -200,15 +200,17 @@ void *x264_focal_connect(x264_focal_input_t* ptr){
                 }
                 // }
 
-                if(numbytes == 12){
-                    float* xp = (float*) &d_buf[0];
-                    float* yp = (float*) &d_buf[4];
-                    float* zp = (float*) &d_buf[8];
+                if(numbytes == 32){
+                    double* xp = (double*) &d_buf[0];
+                    double* yp = (double*) &d_buf[8];
+                    double* zp = (double*) &d_buf[16];
+                    double* time_stamp = (double*) &d_buf[24];
+                    printf("ts: %lf\n", *time_stamp);
                     memcpy(s_buf, d_buf, 12);
                     forward_ready = 1;
-                    float x = *xp;
-                    float y = *yp;
-                    float z = *zp;
+                    float x = (float) *xp;
+                    float y = (float) *yp;
+                    float z = (float) *zp;
                     x264_pthread_mutex_lock(&pos_data->mutex);
                     pos_data->status = valid;
                     pos_data->x = x;
